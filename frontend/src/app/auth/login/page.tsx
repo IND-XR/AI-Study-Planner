@@ -1,5 +1,4 @@
 'use client';
-
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -74,14 +73,7 @@ toast.success('Login successful 🚀');
 // ✅ ROLE SAFE (IMPORTANT)
 const role = user?.role?.toUpperCase() || 'STUDENT';
 
-
-setTimeout(() => {
-  if( role === 'ADMIN') {
-    router.replace('/admin');
-  }else{
-    router.replace('/dashboard');
-  }
-},200);
+setTimeout(() => { router .replace(role === 'ADMIN' ? '/admin' : '/dashboard') }, 200)
 
 
 console.log("Redirecting to:", user.role);

@@ -1,8 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/store/auth';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LogOut, Home, Book, Calendar, TrendingUp } from 'lucide-react';
 
@@ -12,19 +11,21 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, token, logout } = useAuthStore();
+  const [ user , setUser] = useState<any>(null);
 
-  useEffect(() => {
-    if (!token) {
-      router.push('/auth/login');
+useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
     }
-  }, [token, router]);
+  }, []);
 
   const handleLogout = () => {
-    logout();
-    router.push('/auth/login');
-  };
+    localStorage.clear();
+    router.replace('/auth/login');
 
+  };
+  
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
