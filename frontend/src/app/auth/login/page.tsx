@@ -83,7 +83,7 @@ console.log("Redirecting to:", user.role);
       toast.error('Network error or server not running');
     } finally {
       setLoading(false);
-    }
+    } 
   };
 
   return (

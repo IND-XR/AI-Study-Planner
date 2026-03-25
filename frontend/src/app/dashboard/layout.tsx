@@ -71,7 +71,7 @@ useEffect(() => {
 
         <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-200 w-64 bg-white">
           <div className="bg-blue-50 p-4 rounded-lg mb-4">
-            <p className="text-xs text-gray-600 mb-2">Logged in as:</p>
+            <p className="text-xs text-gray-600 mb-2">Logged in as: {user?.name}</p>
             <p className="text-sm font-medium text-gray-900">{user?.email}</p>
           </div>
           <button

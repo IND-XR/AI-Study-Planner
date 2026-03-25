@@ -3,18 +3,20 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
+import { use } from 'passport';
 
 export default function AdminPage() {
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, logout, loadUser } = useAuthStore();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    loadUser(); // ✅ Ensure user is loaded on mount  
+  },[]);
+
+  useEffect(() => {
     // ✅ Wait for user load
-    if (user === null) {
-      router.replace('/auth/login');
-      return;
-    }
+    if (user === null) return;
 
     // ✅ FIX: role uppercase
     if (user.role !== 'ADMIN') {
@@ -27,6 +29,7 @@ export default function AdminPage() {
 
   const handleLogout = () => {
     logout();
+    setIsReady(false);
     router.replace('/auth/login');
   };
 
@@ -38,6 +41,14 @@ export default function AdminPage() {
       </div>
     );
   }
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-white">  
+       logging out // Please log in to access the admin panel.
+      </div>
+    );
+  }
+
 
   return (
       <div className="min-h-screen bg-gradient-to-br from-black via-blue-900 to-black">
@@ -69,10 +80,10 @@ export default function AdminPage() {
           {/* Welcome */}
           <div className="bg-white/10 backdrop-blur-sm border border-orange-500/30 p-8 rounded-2xl mb-8">
             <h2 className="text-3xl font-bold text-white mb-2">
-              Welcome, {user.name}! 👋
+              Welcome,{user?.name}! 👋
             </h2>
             <p className="text-gray-300">
-              Admin ID: {user.enrollmentNumber}
+              Admin ID: {user?.enrollmentNumber}
             </p>
           </div>
 
