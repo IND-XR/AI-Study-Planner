@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String           @id @default(uuid())
+  password         String
+  profilePicture   String?
+  lastLogin        DateTime?
+  isActive         Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  role             Role             @default(STUDENT)
+  name             String?
+  enrollmentNumber String           @unique
+  course           String?
+  department       String?
+  semester         Int?
+  supabaseId       String?
+  exams            Exam[]
+  progressRecords  ProgressRecord[]
+  studyPlans       StudyPlan[]
+  subjects         Subject[]
+  topics           Topic[]
+
+  @@index([enrollmentNumber])
+  @@index([course])
+  @@index([semester])
+}
+
+model Subject {
+  id           String   @id @default(uuid())
+  userId       String
+  name         String
+  description  String?
+  academicYear String?
+  semester     Int?
+  priority     Int      @default(0)
+  color        String?  @default("#3B82F6")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  exams        Exam[]
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topics       Topic[]
+
+  @@unique([userId, name, academicYear])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Exam {
+  id              String          @id @default(uuid())
+  userId          String
+  subjectId       String
+  name            String
+  type            String
+  description     String?
+  totalMarks      Float           @default(100)
+  targetScore     Float?
+  examinationDate DateTime
+  weightage       Int             @default(0)
+  isCompleted     Boolean         @default(false)
+  actualScore     Float?
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  subject         Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studyPlanItems  StudyPlanItem[]
+  topics          Topic[]
+
+  @@unique([userId, subjectId, name, type])
+  @@index([userId])
+  @@index([subjectId])
+  @@index([examinationDate])
+}
+
+model Topic {
+  id              String           @id @default(uuid())
+  userId          String
+  subjectId       String
+  examId          String
+  name            String
+  description     String?
+  difficulty      String
+  estimatedHours  Float            @default(1.0)
+  priority        Int              @default(0)
+  isCompleted     Boolean          @default(false)
+  completedAt     DateTime?
+  notes           String?
+  resources       String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  progressRecords ProgressRecord[]
+  studyPlanItems  StudyPlanItem[]
+  exam            Exam             @relation(fields: [examId], references: [id], onDelete: Cascade)
+  subject         Subject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, examId, name])
+  @@index([userId])
+  @@index([subjectId])
+  @@index([examId])
+}
+
+model StudyPlan {
+  id                   String          @id @default(uuid())
+  userId               String
+  startDate            DateTime
+  endDate              DateTime
+  totalWeeklyHours     Float           @default(0)
+  totalDailyHours      Float           @default(0)
+  generatedAt          DateTime        @default(now())
+  description          String?
+  isActive             Boolean         @default(true)
+  completionPercentage Float           @default(0.0)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items                StudyPlanItem[]
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+model StudyPlanItem {
+  id             String    @id @default(uuid())
+  studyPlanId    String
+  examId         String
+  topicId        String
+  scheduledDate  DateTime
+  allocatedHours Float     @default(1.0)
+  completedHours Float     @default(0)
+  isCompleted    Boolean   @default(false)
+  completedAt    DateTime?
+  priority       Int       @default(0)
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  exam           Exam      @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studyPlan      StudyPlan @relation(fields: [studyPlanId], references: [id], onDelete: Cascade)
+  topic          Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@unique([studyPlanId, examId, topicId, scheduledDate])
+  @@index([studyPlanId])
+  @@index([examId])
+  @@index([topicId])
+  @@index([scheduledDate])
+}
+
+model ProgressRecord {
+  id              String   @id @default(uuid())
+  userId          String
+  topicId         String
+  studyDate       DateTime
+  hoursSpent      Float    @default(0)
+  confidenceLevel String?
+  notes           String?
+  rating          Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  topic           Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([topicId])
+  @@index([studyDate])
+}
+
+enum Role {
+  ADMIN
+  STUDENT
+}

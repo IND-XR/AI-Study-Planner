@@ -1,0 +1,56 @@
+
+
+# Ignore dependencies
+node_modules/
+dist/
+build/
+.next/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-workspace
+*.sublime-project
+
+# Node
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+
+# Testing / Coverage
+coverage/
+.nyc_output/
+
+# Prisma
+.env
+.env*.local
+prisma/migrations/
+
+# Build artifacts /  TypeScript
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary files
+tmp/
+temp/
+*.tmp

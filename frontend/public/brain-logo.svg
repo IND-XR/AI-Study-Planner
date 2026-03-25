@@ -1,0 +1,25 @@
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#ff6a00" />
+      <stop offset="100%" stopColor="#ff9a3c" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Brain -->
+  <ellipse cx="25" cy="28" rx="9" ry="11" fill="url(#brainGrad)" stroke="#cc5500" strokeWidth="0.5" />
+  <ellipse cx="50" cy="20" rx="11" ry="13" fill="url(#brainGrad)" stroke="#cc5500" strokeWidth="0.5" />
+  <ellipse cx="75" cy="28" rx="9" ry="11" fill="url(#brainGrad)" stroke="#cc5500" strokeWidth="0.5" />
+  
+  <!-- Brain ridges -->
+  <path d="M30 25 Q50 22 70 25" stroke="#cc5500" strokeWidth="0.8" fill="none" opacity="0.6" />
+  <path d="M28 32 Q50 30 72 32" stroke="#cc5500" strokeWidth="0.8" fill="none" opacity="0.6" />
+  
+  <!-- Brain bottom lobes -->
+  <path d="M35 40 Q30 44 32 50" stroke="url(#brainGrad)" strokeWidth="2" fill="none" strokeLinecap="round" />
+  <path d="M50 42 Q48 48 50 55" stroke="url(#brainGrad)" strokeWidth="2" fill="none" strokeLinecap="round" />
+  <path d="M65 40 Q70 44 68 50" stroke="url(#brainGrad)" strokeWidth="2" fill="none" strokeLinecap="round" />
+  
+  <!-- Shine effect -->
+  <ellipse cx="40" cy="30" rx="5" ry="6" fill="white" opacity="0.35" />
+</svg>

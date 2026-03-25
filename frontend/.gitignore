@@ -1,0 +1,10 @@
+/node_modules
+/.pnp
+.pnp.js
+/.next/
+/out/
+.env.local
+.env
+build
+dist
+.DS_Store

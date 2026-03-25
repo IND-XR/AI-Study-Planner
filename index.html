@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Study Planner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-background">
+      <header class="top-bar">
+        <div class="brand">
+          <div class="brand-logo">
+            <span class="brand-logo-inner"></span>
+          </div>
+          <span class="brand-name">AI Study Planner</span>
+        </div>
+      </header>
+
+      <main class="hero">
+        <section class="hero-content">
+          <h1 class="hero-title">AI Powered Study Planner</h1>
+          <p class="hero-subtitle">
+            Generate AI-tailored study timetables for your college exams.
+          </p>
+
+          <div class="hero-controls">
+            <button class="hero-select">
+              <span class="hero-select-label">Lovely Professional University</span>
+              <span class="hero-select-chevron">▾</span>
+            </button>
+            <button class="hero-cta">Start Planning</button>
+          </div>
+
+          <div class="hero-social-proof">
+            <div class="social-text">Trusted by thousands of students</div>
+            <div class="social-stars">
+              <span>★★★★★</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="hero-dashboard-wrapper">
+          <div class="hero-glow"></div>
+          <div class="dashboard-shell">
+            <div class="dashboard-top-bar">
+              <div class="window-dots">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="dashboard-top-center">
+                <span class="top-pill">AI Study Planner</span>
+              </div>
+              <div class="dashboard-top-right">
+                <div class="icon-circle"></div>
+                <div class="icon-circle"></div>
+                <div class="user-chip">
+                  <span class="user-avatar">A</span>
+                  <span class="user-name">Ahmed</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="dashboard-body">
+              <aside class="dashboard-sidebar">
+                <div class="sidebar-profile">
+                  <div class="sidebar-avatar">A</div>
+                  <div class="sidebar-user">
+                    <div class="sidebar-name">Ahmed Kare</div>
+                    <div class="sidebar-tag">Premium</div>
+                  </div>
+                </div>
+
+                <nav class="sidebar-nav">
+                  <button class="sidebar-item sidebar-item-active">
+                    <span class="sidebar-dot"></span>
+                    <span>Dashboard</span>
+                  </button>
+                  <button class="sidebar-item"><span>Subjects</span></button>
+                  <button class="sidebar-item"><span>Exams</span></button>
+                  <button class="sidebar-item"><span>Topics</span></button>
+                  <button class="sidebar-item"><span>Study Plan</span></button>
+                  <button class="sidebar-item"><span>Progress</span></button>
+                  <button class="sidebar-item"><span>Settings</span></button>
+                </nav>
+
+                <button class="sidebar-upgrade">Upgrade to Pro ›</button>
+              </aside>
+
+              <section class="dashboard-main">
+                <header class="dashboard-main-header">
+                  <div class="tabs">
+                    <button class="tab tab-active">Dashboard</button>
+                    <button class="tab">Planner Features</button>
+                    <button class="tab">Testimonials</button>
+                    <button class="tab">Pricing</button>
+                  </div>
+                </header>
+
+                <div class="dashboard-main-grid">
+                  <div class="calendar-card">
+                    <header class="calendar-header">
+                      <div class="calendar-title-group">
+                        <div class="pill pill-ready">Ready</div>
+                        <button class="pill pill-ghost">Monthly</button>
+                      </div>
+                      <div class="calendar-days">
+                        <span>Monday</span>
+                        <span>Sunday</span>
+                        <span>Wednesday</span>
+                        <span>Thursday</span>
+                        <span>Friday</span>
+                        <span>Saturday</span>
+                        <span>Sunday</span>
+                      </div>
+                    </header>
+
+                    <div class="calendar-body">
+                      <div class="time-column">
+                        <span>9:00 AM</span>
+                        <span>11:00 AM</span>
+                        <span>1:00 PM</span>
+                        <span>3:00 PM</span>
+                        <span>6:00 PM</span>
+                      </div>
+                      <div class="schedule-grid">
+                        <div class="event event-blue">
+                          <div class="event-title">Calculus</div>
+                          <div class="event-sub">Unit 1: Convergence (FIDs)</div>
+                          <div class="event-time">9:00 AM – 11:00 AM</div>
+                        </div>
+                        <div class="event event-green">
+                          <div class="event-title">Review Notes</div>
+                          <div class="event-sub">Read T.15 Questionnaires (FIDs)</div>
+                          <div class="event-time">1:00 PM – 3:00 PM</div>
+                        </div>
+                        <div class="event event-amber">
+                          <div class="event-title">Study Data</div>
+                          <div class="event-sub">Performance Review</div>
+                          <div class="event-time">6:00 PM – 8:00 PM</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <aside class="right-column">
+                    <div class="card tasks-card">
+                      <header class="card-header">
+                        <span>Today's Tasks</span>
+                      </header>
+                      <ul class="tasks-list">
+                        <li class="task-item">
+                          <span class="task-indicator task-indicator-green"></span>
+                          <div>
+                            <div class="task-title">Revise Algebra Chapter 3</div>
+                            <div class="task-sub">Due today</div>
+                          </div>
+                        </li>
+                        <li class="task-item">
+                          <span class="task-indicator task-indicator-orange"></span>
+                          <div>
+                            <div class="task-title">Lovely Prewmelis Level</div>
+                            <div class="task-sub">In progress</div>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div class="card productivity-card">
+                      <header class="card-header">
+                        <span>Productivity</span>
+                      </header>
+                      <div class="productivity-main">
+                        <div class="productivity-stat">
+                          <div class="stat-number">1.5</div>
+                          <div class="stat-label">x speed</div>
+                        </div>
+                        <div class="productivity-detail">
+                          <div class="detail-value">1.5</div>
+                          <div class="detail-label">Hours Studied</div>
+                        </div>
+                      </div>
+                      <div class="productivity-bars">
+                        <span></span><span></span><span></span><span></span
+                        ><span></span><span></span><span></span>
+                      </div>
+                    </div>
+
+                    <div class="card exam-card">
+                      <header class="card-header">
+                        <span>Midterm Exam</span>
+                      </header>
+                      <div class="exam-body">
+                        <div class="exam-target">
+                          Target score <strong>85</strong> in <strong>2 days</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </aside>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="bottom-nav">
+        <button class="bottom-link bottom-link-active">Dashboard</button>
+        <button class="bottom-link">Planner Features</button>
+        <button class="bottom-link">Testimonials</button>
+        <button class="bottom-link">Pricing</button>
+      </footer>
+    </div>
+  </body>
+  </html>
+
