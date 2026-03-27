@@ -1,0 +1,25 @@
+:root {
+  --student-bg: #fffaf6;
+  --student-sidebar: #fff;
+  --student-card: #fff;
+  --student-orange: #ff8800;
+  --student-link: #ff8800;
+  --student-muted: #b0b0b0;
+  --student-text: #222;
+}
+
+[data-theme="dark"] {
+  --student-bg: #18181c;
+  --student-sidebar: #23232a;
+  --student-card: #23232a;
+  --student-orange: #ff8800;
+  --student-link: #ff8800;
+  --student-muted: #888;
+  --student-text: #fff;
+}
+
+.student-dashboard-root {
+  background: var(--student-bg);
+  color: var(--student-text);
+  min-height: 100vh;
+}

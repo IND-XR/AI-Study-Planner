@@ -5,6 +5,12 @@ const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Starting database seed...');
+  
+    // Safety check: Prevent running seed in production
+    if (process.env.NODE_ENV === 'production') {
+      console.error('Seeding is disabled in production environment.');
+      process.exit(1);
+    }
 
   // Clear existing data (in correct order to respect foreign keys)
   await prisma.progressRecord.deleteMany();
@@ -16,30 +22,55 @@ async function main() {
   await prisma.user.deleteMany();
 
 
-  // Hash password for the new user
-  const hashedPassword = await bcrypt.hash('Test@1234', 10);
 
-  // Create a single new user
-  const newUser = await prisma.user.create({
+  // Seed admin user (from your provided data)
+  const adminUser = await prisma.user.create({
     data: {
-      id: 'user-001',
-      enrollmentNumber: 'ENR2026001',
-      name: 'Test User',
-      role: 'STUDENT',
-      password: hashedPassword,
-      course: 'BTech IT',
-      department: 'IT',
-      semester: 4,
+      id: 'admin-001',
+      password: '$2b$10$C8WvzkPKyex1rpNgVuKj7ufcC6nxrxDkSMgz1810QLNjN2CcyB5QG',
+      profilePicture: '',
+      lastLogin: new Date('2026-03-26T06:24:07.373Z'),
+      isActive: true,
+      createdAt: new Date('2026-03-08T12:38:34.080Z'),
+      updatedAt: new Date('2026-03-26T06:24:07.374Z'),
+      role: 'ADMIN',
+      name: 'Admin',
+      enrollmentNumber: 'admin001',
+      course: 'Administration',
+      department: 'Admin',
+      semester: 0,
+      supabaseId: null,
     },
   });
 
-  console.log('✅ Created new user:', newUser.enrollmentNumber);
+  // Seed student user (from your provided data)
+  const studentUser = await prisma.user.create({
+    data: {
+      id: 'd41480bd-5bc0-463e-b673-59f40af93c1b',
+      password: '$2b$10$lERtpeFR9gDtbDS7NDFKAuFPhjb9wLUB4Y8bCtfX0UDPrkciKLCOu',
+      profilePicture: '',
+      lastLogin: new Date('2026-03-26T06:24:16.891Z'),
+      isActive: true,
+      createdAt: new Date('2026-03-19T11:36:33.909Z'),
+      updatedAt: new Date('2026-03-26T06:24:16.892Z'),
+      role: 'STUDENT',
+      name: 'Anmol',
+      enrollmentNumber: '99999999',
+      course: 'MCA',
+      department: '',
+      semester: null,
+      supabaseId: null,
+    },
+  });
 
-  // Create subjects for student1
+  console.log('✅ Created admin and student users');
+
+
+  // Create subjects for studentUser
   const mathSubject = await prisma.subject.create({
     data: {
       name: 'Mathematics',
-      userId: student1.id,
+      userId: studentUser.id,
       description: 'Advanced Mathematics course',
       semester: 6,
       priority: 9,
@@ -50,7 +81,7 @@ async function main() {
   const cseSubject = await prisma.subject.create({
     data: {
       name: 'Data Structures',
-      userId: student1.id,
+      userId: studentUser.id,
       description: 'Data Structures and Algorithms',
       semester: 6,
       priority: 8,
@@ -65,7 +96,7 @@ async function main() {
     data: {
       name: 'Midterm',
       type: 'Midterm',
-      userId: student1.id,
+      userId: studentUser.id,
       subjectId: mathSubject.id,
       description: 'Mathematics Midterm Exam',
       totalMarks: 100,
@@ -79,7 +110,7 @@ async function main() {
     data: {
       name: 'Endterm',
       type: 'Endterm',
-      userId: student1.id,
+      userId: studentUser.id,
       subjectId: mathSubject.id,
       description: 'Mathematics Final Exam',
       totalMarks: 100,
@@ -94,7 +125,7 @@ async function main() {
     data: {
       name: 'Midterm',
       type: 'Midterm',
-      userId: student1.id,
+      userId: studentUser.id,
       subjectId: cseSubject.id,
       description: 'Data Structures Midterm Exam',
       totalMarks: 100,
@@ -110,7 +141,7 @@ async function main() {
   const algebra = await prisma.topic.create({
     data: {
       name: 'Algebra',
-      userId: student1.id,
+      userId: studentUser.id,
       subjectId: mathSubject.id,
       examId: mathExam1.id,
       description: 'Linear and Quadratic equations',
@@ -123,7 +154,7 @@ async function main() {
   const geometry = await prisma.topic.create({
     data: {
       name: 'Geometry',
-      userId: student1.id,
+      userId: studentUser.id,
       subjectId: mathSubject.id,
       examId: mathExam1.id,
       description: 'Coordinate and Analytic Geometry',
@@ -136,7 +167,7 @@ async function main() {
   const trigonometry = await prisma.topic.create({
     data: {
       name: 'Trigonometry',
-      userId: student1.id,
+      userId: studentUser.id,
       subjectId: mathSubject.id,
       examId: mathExam2.id,
       description: 'Trigonometric functions and identities',
@@ -150,7 +181,7 @@ async function main() {
   const arrays = await prisma.topic.create({
     data: {
       name: 'Arrays',
-      userId: student1.id,
+      userId: studentUser.id,
       subjectId: cseSubject.id,
       examId: dsExam.id,
       description: 'Arrays and dynamic arrays',
@@ -163,7 +194,7 @@ async function main() {
   const linkedList = await prisma.topic.create({
     data: {
       name: 'Linked Lists',
-      userId: student1.id,
+      userId: studentUser.id,
       subjectId: cseSubject.id,
       examId: dsExam.id,
       description: 'Singly and Doubly Linked Lists',
@@ -181,7 +212,7 @@ async function main() {
 
   const studyPlan = await prisma.studyPlan.create({
     data: {
-      userId: student1.id,
+      userId: studentUser.id,
       startDate,
       endDate,
       totalWeeklyHours: 20,
@@ -235,7 +266,7 @@ async function main() {
 
   await prisma.progressRecord.create({
     data: {
-      userId: student1.id,
+      userId: studentUser.id,
       topicId: algebra.id,
       studyDate: today,
       hoursSpent: 2,
@@ -247,7 +278,7 @@ async function main() {
 
   await prisma.progressRecord.create({
     data: {
-      userId: student1.id,
+      userId: studentUser.id,
       topicId: geometry.id,
       studyDate: today,
       hoursSpent: 1.5,
@@ -259,7 +290,7 @@ async function main() {
 
   await prisma.progressRecord.create({
     data: {
-      userId: student1.id,
+      userId: studentUser.id,
       topicId: arrays.id,
       studyDate: today,
       hoursSpent: 2,

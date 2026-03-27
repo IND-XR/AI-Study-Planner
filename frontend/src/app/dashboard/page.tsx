@@ -1,191 +1,617 @@
-
-
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import { apiClient } from '@/api/client';
-
 import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
+  BellRing,
+  Brain,
+  BookOpen,
+  Crown,
+  CheckCircle2,
+  Clock3,
+  Flame,
+  Gauge,
+  Medal,
+  Sparkles,
+  Target,
+  TrendingUp,
+  Zap,
+  Lock,
+  Calendar,
+  BookMarked,
+} from 'lucide-react';
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
 } from 'recharts';
+import { MetricCard, SectionCard } from '@/features/dashboard/components/Cards';
+import { PlannerBoard } from '@/features/dashboard/components/PlannerBoard';
+import { Timeline } from '@/features/dashboard/components/Timeline';
+import { WeeklyScheduleView } from '@/features/dashboard/components/WeeklyScheduleView';
+import { MonthlyTimetableView } from '@/features/dashboard/components/MonthlyTimetableView';
+import { LecturesList } from '@/features/dashboard/components/LecturesList';
+import { CustomSubjectManager } from '@/features/dashboard/components/CustomSubjectManager';
+import { useSmartInsight } from '@/features/dashboard/hooks';
+import { useDashboardStore } from '@/store/dashboard';
+import { useTimetableStore } from '@/store/timetable';
+import { useState } from 'react';
 
-import { Book, Calendar, Trophy, Zap } from 'lucide-react';
+export default function DashboardPage(): JSX.Element {
+  const {
+    profile,
+    overview,
+    analytics,
+    tasks,
+    sessions,
+    timeline,
+    notifications,
+    settings,
+    leaderboard,
+    gamification,
+    isLoading,
+    error,
+    toggleTask,
+    rescheduleSession,
+    generateCatchUpPlan,
+    saveSettings,
+  } = useDashboardStore((state) => ({
+    profile: state.profile,
+    overview: state.overview,
+    analytics: state.analytics,
+    tasks: state.tasks,
+    sessions: state.sessions,
+    timeline: state.timeline,
+    notifications: state.notifications,
+    settings: state.settings,
+    leaderboard: state.leaderboard,
+    gamification: state.gamification,
+    isLoading: state.isLoading,
+    error: state.error,
+    toggleTask: state.toggleTask,
+    rescheduleSession: state.rescheduleSession,
+    generateCatchUpPlan: state.generateCatchUpPlan,
+    saveSettings: state.saveSettings,
+  }));
 
-interface DashboardStats {
-  totalSubjects: number;
-  upcomingExams: number;
-  activeStudyPlan: boolean;
-  weeklyProgress: number;
-}
+  const {
+    weeklySchedules,
+    monthlyTimetables,
+    isPremiumUser,
+    currentWeekSchedule,
+    currentMonthTimetable,
+    createWeeklySchedule,
+    generateAIWeeklySchedule,
+    createMonthlyTimetable,
+    generateAIMonthlyTimetable,
+    setPremiumStatus,
+  } = useTimetableStore();
 
-interface ChartData {
-  day: string;
-  hours: number;
-  topics: number;
-}
+  const insight = useSmartInsight();
+  const [activeTab, setActiveTab] = useState<'weekly' | 'monthly' | 'lectures' | 'subjects'>('weekly');
+  const [showPremiumUpgrade, setShowPremiumUpgrade] = useState(false);
 
-const mockWeeklyData: ChartData[] = [
-  { day: 'Mon', hours: 3, topics: 5 },
-  { day: 'Tue', hours: 4, topics: 7 },
-  { day: 'Wed', hours: 3, topics: 6 },
-  { day: 'Thu', hours: 5, topics: 9 },
-  { day: 'Fri', hours: 2, topics: 4 },
-  { day: 'Sat', hours: 6, topics: 10 },
-  { day: 'Sun', hours: 4, topics: 8 },
-];
+  if (isLoading && !profile) {
+    return (
+      <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-5 text-sm text-slate-200">
+        Loading dashboard...
+      </div>
+    );
+  }
 
-export default function DashboardPage() {
-  const router = useRouter();
+  // Initialize timetables if not exists
+  const weeklySchedule =
+    currentWeekSchedule ||
+    (weeklySchedules.length === 0 ? createWeeklySchedule(12, 2026) : weeklySchedules[0]);
+  const monthlyTimetable =
+    currentMonthTimetable ||
+    (monthlyTimetables.length === 0 ? createMonthlyTimetable(3, 2026) : monthlyTimetables[0]);
 
-  const [user, setUser] = useState<any>(null);
-  const [stats, setStats] = useState<DashboardStats>({
-    totalSubjects: 0,
-    upcomingExams: 0,
-    activeStudyPlan: false,
-    weeklyProgress: 0,
+  const prioritizedTasks = [...tasks].sort((first, second) => {
+    const weight = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 } as const;
+    return weight[second.priority] - weight[first.priority];
   });
 
+  const urgentNotifications = notifications.filter((item) => item.priority === 'URGENT');
+  const visibleNotifications =
+    urgentNotifications.length > 0 ? urgentNotifications : notifications.slice(0, 3);
+  const productivityScore = Math.round(
+    analytics.reduce((accumulator, item) => accumulator + item.productivityScore, 0) /
+      Math.max(1, analytics.length),
+  );
+  const weeklyHours = analytics.reduce((accumulator, item) => accumulator + item.studyHours, 0);
 
-
-  // ✅ LOGOUT
-  const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
-    router.push('/auth/login');
+  // Degree-specific exam types
+  const examTypes = {
+    MCA: ['CA1', 'CA2', 'CA3', 'MIDTERM', 'ENDTERM'],
+    BTECH: ['CA1', 'CA2', 'CA3', 'MIDTERM', 'ENDTERM'],
+    MTECH: ['CA1', 'CA2', 'CA3', 'MIDTERM', 'ENDTERM'],
   };
 
+  const studentDegree = (profile?.degree || 'BTECH') as keyof typeof examTypes;
+  const applicableExamTypes = examTypes[studentDegree] || examTypes.BTECH;
+
   return (
-    <ProtectedRoute requiredRole="STUDENT">
+    <div className="space-y-6">
+      <header className="rounded-2xl border border-orange-900/60 bg-gradient-to-r from-neutral-900 via-neutral-900 to-orange-950/40 p-6 shadow-xl shadow-orange-950/20">
+        <h1 className="text-2xl font-bold">
+          Welcome, {profile?.name ?? 'Student'}
+          <span className="ml-2 text-primary-500">👋</span>
+        </h1>
+        <p className="mt-1 text-sm text-slate-300">
+          {profile?.degree ?? 'BTECH'} • Semester {profile?.semester ?? 1} • Smart AI performance hub
+        </p>
 
-      <div className="space-y-8">
+        <div className="mt-4 rounded-xl border border-orange-900/50 bg-orange-500/10 p-3 text-sm text-orange-200">
+          <span className="font-semibold">Smart Insight:</span> {insight}
+        </div>
 
-        {/* Header */}
-        <div className="flex justify-between items-center">
+        {error ? (
+          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-300">
+            {error}
+          </p>
+        ) : null}
+      </header>
+
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="Study Hours Today"
+          value={`${overview.studyHoursToday.toFixed(1)}h`}
+          meta={`Time Blocking: ${Math.round(overview.studyHoursToday * 2)} slots`}
+          icon={<Clock3 size={18} />}
+        />
+        <MetricCard
+          label="Tasks Completed"
+          value={`${overview.tasksCompletedToday}`}
+          meta={`Prioritized queue: ${prioritizedTasks.length}`}
+          icon={<CheckCircle2 size={18} />}
+        />
+        <MetricCard
+          label="Upcoming Exam"
+          value={`${overview.upcomingExamCountdownDays}d`}
+          meta="AI revision priority active"
+          icon={<Target size={18} />}
+        />
+        <MetricCard
+          label="Weekly Progress"
+          value={`${overview.weeklyProgress}%`}
+          meta={overview.status === 'BEHIND' ? 'Behind schedule' : 'On track'}
+          icon={<TrendingUp size={18} />}
+        />
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="xl:col-span-8 space-y-4">
+          <SectionCard
+            title="AI-Powered Timetable"
+            subtitle="Google Calendar-like drag-and-drop planning with adaptive recovery"
+            right={
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={generateCatchUpPlan}
+                  className="rounded-lg bg-primary-500 px-3 py-2 text-xs font-semibold text-white hover:bg-primary-600"
+                >
+                  Catch-up Planner
+                </button>
+                <button className="rounded-lg border border-orange-700/60 bg-orange-500/10 px-3 py-2 text-xs font-semibold text-orange-200">
+                  Daily / Weekly / Monthly
+                </button>
+              </div>
+            }
+          >
+            <PlannerBoard sessions={sessions} onReschedule={rescheduleSession} />
+            <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3">
+              <div className="rounded-lg bg-neutral-800/70 px-3 py-2 text-xs text-slate-300">
+                Weak subject boost: <span className="font-semibold text-orange-300">Enabled</span>
+              </div>
+              <div className="rounded-lg bg-neutral-800/70 px-3 py-2 text-xs text-slate-300">
+                Missed session recovery: <span className="font-semibold text-orange-300">Auto</span>
+              </div>
+              <div className="rounded-lg bg-neutral-800/70 px-3 py-2 text-xs text-slate-300">
+                Exam priority mode: <span className="font-semibold text-orange-300">High</span>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Performance Trend" subtitle="Mini analytics with productivity trend and consistency">
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={analytics}>
+                  <defs>
+                    <linearGradient id="studyHoursGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#FF8800" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#FF8800" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
+                  <XAxis dataKey="label" />
+                  <YAxis />
+                  <Tooltip />
+                  <Area
+                    type="monotone"
+                    dataKey="studyHours"
+                    stroke="#FF8800"
+                    strokeWidth={2}
+                    fill="url(#studyHoursGradient)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </SectionCard>
+        </div>
+
+        <div className="xl:col-span-4 space-y-4">
+          <SectionCard title="Today’s Tasks" subtitle="Task prioritization engine">
+            <ul className="space-y-2">
+              {prioritizedTasks.slice(0, 5).map((task) => (
+                <li
+                  key={task.id}
+                  className="flex items-center justify-between gap-2 rounded-xl border border-slate-700 bg-neutral-800/80 px-3 py-2"
+                >
+                  <button
+                    onClick={() => toggleTask(task.id)}
+                    className={`text-left text-sm ${task.completed ? 'line-through text-slate-500' : 'text-slate-200'}`}
+                  >
+                    {task.title}
+                  </button>
+                  <span className="rounded-md bg-orange-500/20 px-2 py-1 text-[10px] font-semibold text-orange-200">
+                    {task.priority}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </SectionCard>
+
+          <SectionCard title="Productivity" subtitle="Score + consistency streak">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl border border-orange-900/50 bg-orange-500/10 p-3">
+                <p className="text-xs text-slate-300">Productivity Score</p>
+                <p className="mt-1 flex items-center gap-1 text-2xl font-bold text-orange-200">
+                  <Gauge size={16} /> {productivityScore}
+                </p>
+              </div>
+              <div className="rounded-xl border border-orange-900/50 bg-orange-500/10 p-3">
+                <p className="text-xs text-slate-300">Streak</p>
+                <p className="mt-1 flex items-center gap-1 text-2xl font-bold text-orange-200">
+                  <Flame size={16} /> {gamification.streakDays}d
+                </p>
+              </div>
+              <div className="col-span-2 rounded-xl border border-slate-700 bg-neutral-800/80 p-3 text-xs text-slate-300">
+                Weekly hours: <span className="font-semibold text-orange-200">{weeklyHours.toFixed(1)}h</span>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Gamification" subtitle="XP, levels, badges, leaderboard">
+            <div className="mb-3 rounded-xl border border-slate-700 bg-neutral-800/80 p-3">
+              <p className="text-xs text-slate-400">XP / Level</p>
+              <p className="mt-1 flex items-center gap-1 text-lg font-bold text-orange-200">
+                <Zap size={14} /> {gamification.xp} XP • Lv.{gamification.level}
+              </p>
+              <p className="mt-1 text-xs text-slate-400">Badges: {gamification.badges.join(', ')}</p>
+            </div>
+            <ul className="space-y-2">
+              {leaderboard.slice(0, 4).map((entry, index) => (
+                <li key={entry.id} className="flex items-center justify-between rounded-lg bg-neutral-800/70 px-3 py-2 text-xs">
+                  <span className="flex items-center gap-2 text-slate-200">
+                    <Medal size={12} className="text-orange-300" /> #{index + 1} {entry.name}
+                  </span>
+                  <span className="text-orange-200">{entry.xp} XP</span>
+                </li>
+              ))}
+            </ul>
+          </SectionCard>
+
+          <SectionCard
+            title="Smart Notifications"
+            subtitle="Priority-based alerts for exams and deadlines"
+          >
+            <ul className="space-y-2">
+              {visibleNotifications.map((item) => (
+                <li key={item.id} className="rounded-lg border border-orange-900/50 bg-orange-500/10 px-3 py-2 text-xs text-slate-200">
+                  <p className="flex items-center gap-1 font-semibold text-orange-200">
+                    <BellRing size={12} /> {item.title}
+                  </p>
+                  <p className="mt-1 text-slate-300">{item.message}</p>
+                </li>
+              ))}
+            </ul>
+          </SectionCard>
+
+          <SectionCard title="Subscription" subtitle="High-conversion upgrade CTA">
+            <div className="rounded-xl border border-orange-700/60 bg-gradient-to-r from-orange-500/20 to-orange-600/20 p-3">
+              <p className="flex items-center gap-1 text-sm font-semibold text-orange-200">
+                <Crown size={14} /> Upgrade to Pro
+              </p>
+              <p className="mt-1 text-xs text-slate-300">Unlock full AI planner, advanced analytics, and smart automation.</p>
+              <button className="mt-3 rounded-lg bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-600">
+                Upgrade Now
+              </button>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Quick Personalization" subtitle="Timezone, study hours, notification control">
+            <div className="space-y-2 text-xs">
+              <label className="block text-slate-300">
+                Daily Study Hours
+                <input
+                  type="number"
+                  min={1}
+                  max={12}
+                  defaultValue={settings.dailyStudyHourGoal}
+                  onBlur={(event) =>
+                    void saveSettings({ dailyStudyHourGoal: Number(event.currentTarget.value || 1) })
+                  }
+                  className="mt-1 w-full rounded-lg border border-slate-700 bg-neutral-800 px-2 py-1"
+                />
+              </label>
+              <label className="block text-slate-300">
+                Timezone
+                <input
+                  defaultValue={settings.timezone}
+                  onBlur={(event) => void saveSettings({ timezone: event.currentTarget.value })}
+                  className="mt-1 w-full rounded-lg border border-slate-700 bg-neutral-800 px-2 py-1"
+                />
+              </label>
+              <label className="flex items-center gap-2 text-slate-300">
+                <input
+                  type="checkbox"
+                  defaultChecked={settings.notificationsEnabled}
+                  onChange={(event) => void saveSettings({ notificationsEnabled: event.currentTarget.checked })}
+                />
+                Notifications Enabled
+              </label>
+              <div className="rounded-lg border border-orange-900/50 bg-orange-500/10 p-2 text-slate-200">
+                <p className="flex items-center gap-1 font-semibold text-orange-200">
+                  <Brain size={12} /> AI Revision Suggestion
+                </p>
+                <p className="mt-1">Revise DBMS today (low retention detected).</p>
+              </div>
+            </div>
+          </SectionCard>
+        </div>
+      </section>
+
+      <SectionCard title="Activity Timeline" subtitle="Recent study, task, and planner events">
+        <Timeline items={timeline.slice(0, 6)} />
+      </SectionCard>
+
+      {/* ======================= */}
+      {/* NEW TIMETABLE SECTION */}
+      {/* ======================= */}
+
+      {/* Degree-Specific Info Bar */}
+      <div className="rounded-xl border border-blue-900/60 bg-gradient-to-r from-blue-950/40 via-neutral-900 to-blue-950/40 p-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900">
-              Welcome {user?.name || 'Student'} 👋
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Your personal AI study companion for LPU exams
+            <p className="text-sm font-semibold text-blue-200">Your Program</p>
+            <p className="mt-1 text-lg font-bold text-white">
+              {profile?.degree || 'BTECH'} • Year {Math.ceil((profile?.semester || 1) / 2)} • Semester{' '}
+              {profile?.semester || 1}
             </p>
           </div>
-
-          {/* <button
-            onClick={logout}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-          >
-            Logout
-          </button> */}
+          <div className="text-right">
+            <p className="text-xs text-slate-400">Enrollment</p>
+            <p className="font-mono text-sm font-bold text-slate-100">{profile?.enrollmentNumber || 'N/A'}</p>
+          </div>
         </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total Subjects</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">
-                  {stats.totalSubjects}
-                </p>
-              </div>
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <Book size={24} className="text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Upcoming Exams</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">
-                  {stats.upcomingExams}
-                </p>
-              </div>
-              <div className="bg-orange-100 p-3 rounded-lg">
-                <Calendar size={24} className="text-orange-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Study Plan</p>
-                <p className="text-xl font-bold text-gray-900 mt-2">
-                  {stats.activeStudyPlan ? 'Active' : 'None'}
-                </p>
-              </div>
-              <div className="bg-green-100 p-3 rounded-lg">
-                <Zap size={24} className="text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Weekly Progress</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">
-                  {stats.weeklyProgress}%
-                </p>
-              </div>
-              <div className="bg-purple-100 p-3 rounded-lg">
-                <Trophy size={24} className="text-purple-600" />
-              </div>
-            </div>
-          </div>
-
+        <div className="mt-3 flex flex-wrap gap-2">
+          <p className="text-xs text-slate-300">Applicable Exam Types:</p>
+          {applicableExamTypes.map((examType) => (
+            <span
+              key={examType}
+              className="inline-block rounded-full bg-blue-500/30 px-3 py-1 text-xs font-semibold text-blue-200"
+            >
+              {examType}
+            </span>
+          ))}
         </div>
-
-        {/* Charts (UNCHANGED) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Weekly Study Hours
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={mockWeeklyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="hours" fill="#3b82f6" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Topics Covered Per Day
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={mockWeeklyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="topics" stroke="#10b981" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-        </div>
-
       </div>
-    </ProtectedRoute >
+
+      {/* Timetable Navigation Tabs */}
+      <div className="rounded-t-xl border border-b-0 border-slate-700 bg-neutral-800/50 p-4">
+        <div className="flex gap-2">
+          {(['weekly', 'monthly', 'lectures', 'subjects'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 font-medium transition ${
+                activeTab === tab
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-neutral-700/50 text-slate-300 hover:bg-neutral-600'
+              }`}
+            >
+              {tab === 'weekly' && <Clock3 size={16} />}
+              {tab === 'monthly' && <Calendar size={16} />}
+              {tab === 'lectures' && <BookOpen size={16} />}
+              {tab === 'subjects' && <BookMarked size={16} />}
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Timetable Content */}
+      <div className="rounded-b-xl border border-t-0 border-slate-700 bg-neutral-900 p-6">
+        {/* Weekly Schedule Tab */}
+        {activeTab === 'weekly' && (
+          <div className="space-y-4">
+            {!isPremiumUser && (
+              <div className="rounded-lg border border-purple-900/60 bg-purple-500/10 p-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="flex items-center gap-2 font-semibold text-purple-200">
+                      <Zap size={16} /> AI-Optimized Weekly Schedule
+                    </p>
+                    <p className="mt-1 text-sm text-slate-300">
+                      Get intelligent AI suggestions for the best study times based on your lectures, exams, and
+                      priorities.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowPremiumUpgrade(true)}
+                    className="flex-shrink-0 rounded-lg bg-purple-500 px-4 py-2 font-semibold text-white hover:bg-purple-600"
+                  >
+                    Upgrade to Premium (₹50)
+                  </button>
+                </div>
+              </div>
+            )}
+            <WeeklyScheduleView schedule={weeklySchedule} isPremium={isPremiumUser} />
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  const newSchedule = createWeeklySchedule(Math.floor(Math.random() * 52) + 1, 2026);
+                }}
+                className="rounded-lg bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-600"
+              >
+                Create New Weekly Schedule
+              </button>
+              {isPremiumUser && (
+                <button
+                  onClick={() => {
+                    const newSchedule = generateAIWeeklySchedule(
+                      Math.floor(Math.random() * 52) + 1,
+                      2026,
+                      [],
+                      []
+                    );
+                  }}
+                  className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 px-4 py-2 font-semibold text-white hover:from-purple-600 hover:to-purple-700"
+                >
+                  <Zap size={16} /> Generate AI Schedule
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Monthly Timetable Tab */}
+        {activeTab === 'monthly' && (
+          <div className="space-y-4">
+            {!isPremiumUser && (
+              <div className="rounded-lg border border-purple-900/60 bg-purple-500/10 p-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="flex items-center gap-2 font-semibold text-purple-200">
+                      <Zap size={16} /> AI-Optimized Monthly Planner
+                    </p>
+                    <p className="mt-1 text-sm text-slate-300">
+                      Plan your entire month with AI suggestions for study sessions prioritized by exam dates and
+                      subject difficulty.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowPremiumUpgrade(true)}
+                    className="flex-shrink-0 rounded-lg bg-purple-500 px-4 py-2 font-semibold text-white hover:bg-purple-600"
+                  >
+                    Upgrade to Premium (₹50)
+                  </button>
+                </div>
+              </div>
+            )}
+            <MonthlyTimetableView timetable={monthlyTimetable} isPremium={isPremiumUser} />
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  const newTimetable = createMonthlyTimetable(3, 2026);
+                }}
+                className="rounded-lg bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-600"
+              >
+                Create New Monthly Timetable
+              </button>
+              {isPremiumUser && (
+                <button
+                  onClick={() => {
+                    const newTimetable = generateAIMonthlyTimetable(3, 2026, []);
+                  }}
+                  className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 px-4 py-2 font-semibold text-white hover:from-purple-600 hover:to-purple-700"
+                >
+                  <Zap size={16} /> AI Generate Monthly Plan
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Lectures Tab */}
+        {activeTab === 'lectures' && (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-blue-900/60 bg-blue-500/10 p-4">
+              <p className="text-sm text-blue-200">
+                ℹ️ Add your college lectures here. They'll automatically appear in your weekly schedule from 9 AM to 5 PM
+                (lecture hours).
+              </p>
+            </div>
+            <LecturesList course={profile?.course || 'MCA'} semester={profile?.semester || 1} />
+          </div>
+        )}
+
+        {/* Custom Subjects Tab */}
+        {activeTab === 'subjects' && (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-green-900/60 bg-green-500/10 p-4">
+              <p className="text-sm text-green-200">
+                📚 Add your custom study subjects like DSA Coding, Design Patterns, etc. {isPremiumUser ? 'AI will automatically include these in your timetable suggestions.' : 'Premium members can get AI-optimized schedules with these subjects.'}
+              </p>
+            </div>
+            <CustomSubjectManager />
+          </div>
+        )}
+      </div>
+
+      {/* Premium Upgrade Modal */}
+      {showPremiumUpgrade && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 p-4">
+          <div className="rounded-xl border border-orange-700/60 bg-neutral-900 p-8 max-w-md">
+            <div className="flex items-center gap-2 text-2xl font-bold text-orange-200 mb-4">
+              <Crown size={24} /> Upgrade to Premium
+            </div>
+            <p className="text-slate-300 mb-4">
+              Unlock AI-powered timetable generation that intelligently schedules your study sessions based on:
+            </p>
+            <ul className="space-y-2 mb-6 text-sm text-slate-300">
+              <li className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-green-400" /> Exam dates and priorities
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-green-400" /> Your college lectures
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-green-400" /> Custom study subjects
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-green-400" /> Subject difficulty levels
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-green-400" /> Optimal study time recommendations
+              </li>
+            </ul>
+            <div className="mb-6 rounded-lg bg-orange-500/20 p-4 text-center">
+              <p className="text-3xl font-bold text-orange-300">₹50</p>
+              <p className="text-sm text-slate-300">One-time payment</p>
+            </div>
+            <button
+              onClick={() => {
+                setPremiumStatus(true);
+                setShowPremiumUpgrade(false);
+              }}
+              className="w-full rounded-lg bg-orange-500 px-4 py-3 font-semibold text-white hover:bg-orange-600 mb-2"
+            >
+              Upgrade Now
+            </button>
+            <button
+              onClick={() => setShowPremiumUpgrade(false)}
+              className="w-full rounded-lg border border-slate-700 bg-neutral-800 px-4 py-3 font-semibold text-slate-300 hover:bg-neutral-700"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

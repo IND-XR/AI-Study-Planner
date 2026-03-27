@@ -1,3 +1,8 @@
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  STUDENT
+}
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,9 +14,6 @@ datasource db {
 
 model User {
   id               String           @id @default(uuid())
-  password         String
-  profilePicture   String?
-  lastLogin        DateTime?
   isActive         Boolean          @default(true)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
@@ -27,6 +29,9 @@ model User {
   studyPlans       StudyPlan[]
   subjects         Subject[]
   topics           Topic[]
+  students         Student[]
+  analytics        Analytics[]
+  subscriptions    Subscription[]
 
   @@index([enrollmentNumber])
   @@index([course])
@@ -48,6 +53,9 @@ model Subject {
   exams        Exam[]
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   topics       Topic[]
+  degreeId     String?
+  degree       Degree?  @relation(fields: [degreeId], references: [id])
+  studyPlanSubjects StudyPlanSubject[]
 
   @@unique([userId, name, academicYear])
   @@index([userId])
@@ -173,7 +181,98 @@ model ProgressRecord {
   @@index([studyDate])
 }
 
-enum Role {
-  ADMIN
-  STUDENT
+
+// --- SaaS Study Planner Additions ---
+
+model Degree {
+  id            String    @id @default(uuid())
+  name          String
+  durationYears Int
+  totalSemesters Int
+  subjects      Subject[]
+  students      Student[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  @@unique([name, durationYears, totalSemesters])
 }
+
+model Student {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  degreeId   String
+  semester   Int
+  status     StudentStatus @default(ACTIVE)
+  user       User     @relation(fields: [userId], references: [id])
+  degree     Degree   @relation(fields: [degreeId], references: [id])
+  studyPlans StudyPlanSaas[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@index([degreeId, semester])
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  SUSPENDED
+}
+
+model StudyPlanSaas {
+  id           String   @id @default(uuid())
+  studentId    String
+  planData     Json
+  generatedAt  DateTime @default(now())
+  weakSubjects String[]
+  student      Student  @relation(fields: [studentId], references: [id])
+  subjects     StudyPlanSubject[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  @@index([studentId, generatedAt])
+}
+
+model StudyPlanSubject {
+  id          String   @id @default(uuid())
+  studyPlanId String
+  subjectId   String
+  progress    Float    @default(0)
+  studyPlan   StudyPlanSaas @relation(fields: [studyPlanId], references: [id])
+  subject     Subject   @relation(fields: [subjectId], references: [id])
+  @@unique([studyPlanId, subjectId])
+}
+
+model Analytics {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  data      Json
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  @@index([userId, type])
+}
+
+model Subscription {
+  id         String   @id @default(uuid())
+  userId     String
+  plan       SubscriptionPlan
+  status     SubscriptionStatus @default(ACTIVE)
+  revenue    Float    @default(0)
+  startedAt  DateTime @default(now())
+  endedAt    DateTime?
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@index([userId, plan, status])
+}
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+}
+
+// --- End of Additions ---

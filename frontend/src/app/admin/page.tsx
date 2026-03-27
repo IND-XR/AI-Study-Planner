@@ -1,169 +1,115 @@
 'use client';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/store/auth';
-import { use } from 'passport';
 
-export default function AdminPage() {
-  const router = useRouter();
-  const { user, logout, loadUser } = useAuthStore();
-  const [isReady, setIsReady] = useState(false);
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { format } from 'date-fns';
+import { SectionCard, MetricCard } from '@/features/dashboard/components/Cards';
+import { useAdminStore } from '@/store/admin';
 
-  useEffect(() => {
-    loadUser(); // ✅ Ensure user is loaded on mount  
-  },[]);
+export default function AdminPage(): JSX.Element {
+  const { metrics, growthData, exams, activities, students } = useAdminStore((state) => ({
+    metrics: state.metrics,
+    growthData: state.growthData,
+    exams: state.exams,
+    activities: state.activities,
+    students: state.students,
+  }));
 
-  useEffect(() => {
-    // ✅ Wait for user load
-    if (user === null) return;
-
-    // ✅ FIX: role uppercase
-    if (user.role !== 'ADMIN') {
-      router.replace('/dashboard');
-      return;
-    }
-
-    setIsReady(true);
-  }, [user, router]);
-
-  const handleLogout = () => {
-    logout();
-    setIsReady(false);
-    router.replace('/auth/login');
-  };
-
-  // ⏳ Prevent flicker
-  if (!isReady) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-white">
-        Loading Admin Panel...
-      </div>
-    );
-  }
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-white">  
-       logging out // Please log in to access the admin panel.
-      </div>
-    );
-  }
-
+  const upcoming = [...exams]
+    .sort((first, second) => new Date(first.examDate).getTime() - new Date(second.examDate).getTime())
+    .slice(0, 5);
 
   return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-blue-900 to-black">
+    <div className="space-y-5">
+      <header>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-300">
+          SaaS system overview for students, exams, and study plan operations
+        </p>
+      </header>
 
-        {/* Header */}
-        <header className="bg-black/50 border-b border-orange-500/30 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-purple-600 rounded-lg flex items-center justify-center">
-                ⚙️
-              </div>
-              <h1 className="text-2xl font-bold text-white">
-                Admin Dashboard
-              </h1>
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {metrics.map((item) => (
+          <MetricCard key={item.label} label={item.label} value={String(item.value)} meta={item.delta} icon={<span>📊</span>} />
+        ))}
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="xl:col-span-8 space-y-4">
+          <SectionCard title="Daily Active Users" subtitle="User growth and engagement trend">
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={growthData}>
+                  <defs>
+                    <linearGradient id="users" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#FF8800" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#FF8800" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" />
+                  <YAxis />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="users" stroke="#FF8800" fill="url(#users)" />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
+          </SectionCard>
 
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </header>
-
-        {/* Main */}
-        <main className="max-w-7xl mx-auto px-4 py-8">
-
-          {/* Welcome */}
-          <div className="bg-white/10 backdrop-blur-sm border border-orange-500/30 p-8 rounded-2xl mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">
-              Welcome,{user?.name}! 👋
-            </h2>
-            <p className="text-gray-300">
-              Admin ID: {user?.enrollmentNumber}
-            </p>
-          </div>
-
-          {/* Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-
-            {/* Students */}
-            <div className="bg-white/5 backdrop-blur-sm border border-orange-500/30 p-6 rounded-xl hover:border-orange-500/50 transition-all cursor-pointer group">
-              <div className="text-4xl mb-4">👥</div>
-              <h3 className="text-white font-bold text-lg mb-2">
-                Manage Students
-              </h3>
-              <p className="text-gray-400 text-sm mb-4">
-                Add, edit, or remove students
-              </p>
-              <button className="w-full px-4 py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 rounded-lg transition-colors">
-                Go to Students
-              </button>
+          <SectionCard title="Study Plan Usage" subtitle="Generated plans by day">
+            <div className="h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={growthData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="plans" fill="#FF8800" radius={6} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
+          </SectionCard>
+        </div>
 
-            {/* Subjects */}
-            <div className="bg-white/5 backdrop-blur-sm border border-orange-500/30 p-6 rounded-xl hover:border-orange-500/50 transition-all cursor-pointer group">
-              <div className="text-4xl mb-4">📚</div>
-              <h3 className="text-white font-bold text-lg mb-2">
-                Manage Subjects
-              </h3>
-              <p className="text-gray-400 text-sm mb-4">
-                Update course subjects
-              </p>
-              <button className="w-full px-4 py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 rounded-lg transition-colors">
-                Go to Subjects
-              </button>
-            </div>
-
-            {/* Exams */}
-            <div className="bg-white/5 backdrop-blur-sm border border-orange-500/30 p-6 rounded-xl hover:border-orange-500/50 transition-all cursor-pointer group">
-              <div className="text-4xl mb-4">📝</div>
-              <h3 className="text-white font-bold text-lg mb-2">
-                Manage Exams
-              </h3>
-              <p className="text-gray-400 text-sm mb-4">
-                Schedule and manage exams
-              </p>
-              <button className="w-full px-4 py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 rounded-lg transition-colors">
-                Go to Exams
-              </button>
-            </div>
-
-            {/* Analytics */}
-            <div className="bg-white/5 backdrop-blur-sm border border-orange-500/30 p-6 rounded-xl hover:border-orange-500/50 transition-all cursor-pointer group">
-              <div className="text-4xl mb-4">📊</div>
-              <h3 className="text-white font-bold text-lg mb-2">
-                Analytics
-              </h3>
-              <p className="text-gray-400 text-sm mb-4">
-                View system analytics
-              </p>
-              <button className="w-full px-4 py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 rounded-lg transition-colors">
-                View Analytics
-              </button>
-            </div>
-
-          </div>
-
-          {/* Info */}
-          <div className="bg-white/5 backdrop-blur-sm border border-purple-500/30 p-6 rounded-xl">
-            <h3 className="text-white font-bold mb-4 flex items-center gap-2">
-              ℹ️ Admin Features Coming Soon
-            </h3>
-            <ul className="space-y-2 text-gray-300">
-              <li>✅ Student Management</li>
-              <li>✅ Subject Management</li>
-              <li>✅ Exam Scheduling</li>
-              <li>✅ Analytics Dashboard</li>
-              <li>✅ Reports</li>
-              <li>✅ Settings</li>
+        <div className="xl:col-span-4 space-y-4">
+          <SectionCard title="Upcoming Exams" subtitle="College-wide schedule">
+            <ul className="space-y-2 text-sm">
+              {upcoming.map((exam) => (
+                <li key={exam.id} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-800/60">
+                  <p className="font-semibold text-slate-900 dark:text-slate-100">{exam.name}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-300">
+                    {exam.examType} • {format(new Date(exam.examDate), 'dd MMM yyyy')} • Sem {exam.semester}
+                  </p>
+                </li>
+              ))}
             </ul>
-          </div>
+          </SectionCard>
 
-        </main>
-      </div>
+          <SectionCard title="Recent Activities" subtitle="Latest admin actions">
+            <ul className="space-y-2 text-sm">
+              {activities.slice(0, 5).map((activity) => (
+                <li key={activity.id} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-800/60">
+                  <p className="text-slate-700 dark:text-slate-200">{activity.text}</p>
+                </li>
+              ))}
+            </ul>
+          </SectionCard>
+
+          <SectionCard title="System Pulse" subtitle="Quick status summary">
+            <p className="text-sm text-slate-600 dark:text-slate-300">Students managed: <span className="font-semibold">{students.length}</span></p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Exam pattern: <span className="font-semibold">3 CA + Mid + End</span></p>
+          </SectionCard>
+        </div>
+      </section>
+    </div>
   );
 }
