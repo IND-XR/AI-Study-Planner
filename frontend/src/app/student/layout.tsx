@@ -2,9 +2,9 @@ import StudentSidebar from './StudentSidebar';
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--student-bg)' }}>
+    <div className="flex h-screen overflow-hidden bg-[#f7f5f2]">
       <StudentSidebar />
-      <main style={{ flex: 1, padding: 40 }}>{children}</main>
+      <main className="min-w-0 flex-1 overflow-y-auto p-6">{children}</main>
     </div>
   );
 }

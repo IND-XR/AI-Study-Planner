@@ -8,14 +8,14 @@ interface MetricCardProps {
 }
 
 export const MetricCard = ({ label, value, meta, icon }: MetricCardProps): JSX.Element => (
-  <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+  <article className="rounded-2xl border border-[#d9e1ea] bg-[#f7f9fc] p-5 shadow-sm">
     <div className="flex items-start justify-between gap-3">
       <div>
         <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-        <p className="mt-2 text-2xl font-bold">{value}</p>
-        {meta ? <p className="mt-1 text-xs text-slate-500">{meta}</p> : null}
+        <p className="mt-2 text-[38px] leading-none font-bold text-[#0f2340]">{value}</p>
+        {meta ? <p className="mt-2 text-sm text-slate-500">{meta}</p> : null}
       </div>
-      <div className="rounded-xl bg-primary-100 p-2 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
+      <div className="rounded-2xl bg-[#ffe9d3] p-2.5 text-[#f18722]">
         {icon}
       </div>
     </div>
@@ -30,11 +30,11 @@ interface SectionCardProps {
 }
 
 export const SectionCard = ({ title, subtitle, right, children }: SectionCardProps): JSX.Element => (
-  <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+  <section className="rounded-2xl border border-[#d9e1ea] bg-white p-5 shadow-sm">
     <div className="mb-4 flex items-start justify-between gap-3">
       <div>
-        <h2 className="text-lg font-semibold">{title}</h2>
-        {subtitle ? <p className="text-sm text-slate-500">{subtitle}</p> : null}
+        <h2 className="text-lg font-semibold text-[#0f2340]">{title}</h2>
+        {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
       </div>
       {right}
     </div>

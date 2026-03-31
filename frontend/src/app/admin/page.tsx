@@ -1,8 +1,8 @@
 'use client';
 
 import {
-  Area,
-  AreaChart,
+  Line,
+  LineChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -12,79 +12,158 @@ import {
   YAxis,
 } from 'recharts';
 import { format } from 'date-fns';
-import { SectionCard, MetricCard } from '@/features/dashboard/components/Cards';
+import { Users, Sparkles, TrendingUp, CalendarDays } from 'lucide-react';
 import { useAdminStore } from '@/store/admin';
 
 export default function AdminPage(): JSX.Element {
-  const { metrics, growthData, exams, activities, students } = useAdminStore((state) => ({
-    metrics: state.metrics,
+  const { growthData, exams, activities, students, plans, searchQuery } = useAdminStore((state) => ({
     growthData: state.growthData,
     exams: state.exams,
     activities: state.activities,
     students: state.students,
+    plans: state.plans,
+    searchQuery: state.searchQuery,
   }));
 
-  const upcoming = [...exams]
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  const filteredExams = exams.filter((exam) => {
+    if (!normalizedQuery) {
+      return true;
+    }
+
+    return [exam.name, exam.examType, `semester ${exam.semester}`].some((value) =>
+      value.toLowerCase().includes(normalizedQuery),
+    );
+  });
+
+  const filteredActivities = activities.filter((activity) => {
+    if (!normalizedQuery) {
+      return true;
+    }
+
+    return activity.text.toLowerCase().includes(normalizedQuery);
+  });
+
+  const filteredStudents = students.filter((student) => {
+    if (!normalizedQuery) {
+      return true;
+    }
+
+    return [student.name, student.email].some((value) => value.toLowerCase().includes(normalizedQuery));
+  });
+
+  const filteredPlans = plans.filter((plan) => {
+    if (!normalizedQuery) {
+      return true;
+    }
+
+    return plan.weakSubjects.some((subject) => subject.toLowerCase().includes(normalizedQuery));
+  });
+
+  const upcoming = [...filteredExams]
     .sort((first, second) => new Date(first.examDate).getTime() - new Date(second.examDate).getTime())
     .slice(0, 5);
 
+  const cardData = [
+    {
+      label: 'Total Students',
+      value: String(filteredStudents.length),
+      growth: '+8.6%',
+      icon: <Users size={18} className="text-orange-500" />,
+    },
+    {
+      label: 'Active Study Plans',
+      value: String(filteredPlans.length),
+      growth: '+5.2%',
+      icon: <Sparkles size={18} className="text-orange-500" />,
+    },
+    {
+      label: 'Upcoming Exams',
+      value: String(upcoming.length),
+      growth: '+3.1%',
+      icon: <CalendarDays size={18} className="text-orange-500" />,
+    },
+    {
+      label: 'Engagement Trend',
+      value: `${Math.round(growthData.reduce((acc, item) => acc + item.engagement, 0) / Math.max(1, growthData.length))}%`,
+      growth: '+6.4%',
+      icon: <TrendingUp size={18} className="text-orange-500" />,
+    },
+  ];
+
   return (
-    <div className="space-y-5">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
+    <div className="space-y-6">
+      <header className="rounded-2xl border border-white/70 bg-white/65 p-5 shadow-lg shadow-slate-300/40 backdrop-blur-sm dark:border-neutral-700/60 dark:bg-neutral-900/70 dark:shadow-black/20">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Admin Dashboard</h1>
         <p className="text-sm text-slate-500 dark:text-slate-300">
           SaaS system overview for students, exams, and study plan operations
         </p>
+        {searchQuery ? (
+          <p className="mt-2 text-xs font-medium text-orange-600 dark:text-orange-300">
+            Showing filtered data for: &quot;{searchQuery}&quot;
+          </p>
+        ) : null}
       </header>
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((item) => (
-          <MetricCard key={item.label} label={item.label} value={String(item.value)} meta={item.delta} icon={<span>📊</span>} />
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {cardData.map((card) => (
+          <article
+            key={card.label}
+            className="rounded-2xl border border-white/80 bg-white/75 p-5 shadow-md shadow-slate-200/70 backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:shadow-lg dark:border-neutral-700/60 dark:bg-neutral-900/65 dark:shadow-black/20"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{card.label}</p>
+              <div className="rounded-lg bg-orange-100 p-2 dark:bg-orange-900/30">{card.icon}</div>
+            </div>
+            <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">{card.value}</p>
+            <p className="mt-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">{card.growth}</p>
+          </article>
         ))}
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <div className="xl:col-span-8 space-y-4">
-          <SectionCard title="Daily Active Users" subtitle="User growth and engagement trend">
-            <div className="h-[280px]">
+        <div className="space-y-4 xl:col-span-8">
+          <div className="rounded-2xl border border-white/80 bg-white/75 p-5 shadow-md shadow-slate-200/70 backdrop-blur-md dark:border-neutral-700/60 dark:bg-neutral-900/65 dark:shadow-black/20">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Daily Active Users</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-300">Dynamic line chart for engagement trend</p>
+            <div className="mt-4 h-[290px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={growthData}>
-                  <defs>
-                    <linearGradient id="users" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#FF8800" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#FF8800" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" />
+                <LineChart data={growthData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
                   <XAxis dataKey="label" />
                   <YAxis />
                   <Tooltip />
-                  <Area type="monotone" dataKey="users" stroke="#FF8800" fill="url(#users)" />
-                </AreaChart>
+                  <Line type="monotone" dataKey="users" stroke="#FF8C00" strokeWidth={3} dot={false} />
+                </LineChart>
               </ResponsiveContainer>
             </div>
-          </SectionCard>
+          </div>
 
-          <SectionCard title="Study Plan Usage" subtitle="Generated plans by day">
-            <div className="h-[260px]">
+          <div className="rounded-2xl border border-white/80 bg-white/75 p-5 shadow-md shadow-slate-200/70 backdrop-blur-md dark:border-neutral-700/60 dark:bg-neutral-900/65 dark:shadow-black/20">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Study Plan Usage</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-300">Bar chart for plan generation volume</p>
+            <div className="mt-4 h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={growthData}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
                   <XAxis dataKey="label" />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="plans" fill="#FF8800" radius={6} />
+                  <Bar dataKey="plans" fill="#FF8C00" radius={8} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </SectionCard>
+          </div>
         </div>
 
-        <div className="xl:col-span-4 space-y-4">
-          <SectionCard title="Upcoming Exams" subtitle="College-wide schedule">
+        <div className="space-y-4 xl:col-span-4">
+          <div className="rounded-2xl border border-white/80 bg-white/75 p-5 shadow-md shadow-slate-200/70 backdrop-blur-md dark:border-neutral-700/60 dark:bg-neutral-900/65 dark:shadow-black/20">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Upcoming Exams</h2>
+            <p className="mb-3 text-sm text-slate-500 dark:text-slate-300">College-wide schedule</p>
             <ul className="space-y-2 text-sm">
               {upcoming.map((exam) => (
-                <li key={exam.id} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-800/60">
+                <li key={exam.id} className="rounded-lg border border-orange-100 bg-orange-50/50 px-3 py-2 dark:border-orange-900/30 dark:bg-orange-900/10">
                   <p className="font-semibold text-slate-900 dark:text-slate-100">{exam.name}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-300">
                     {exam.examType} • {format(new Date(exam.examDate), 'dd MMM yyyy')} • Sem {exam.semester}
@@ -92,22 +171,32 @@ export default function AdminPage(): JSX.Element {
                 </li>
               ))}
             </ul>
-          </SectionCard>
+          </div>
 
-          <SectionCard title="Recent Activities" subtitle="Latest admin actions">
+          <div className="rounded-2xl border border-white/80 bg-white/75 p-5 shadow-md shadow-slate-200/70 backdrop-blur-md dark:border-neutral-700/60 dark:bg-neutral-900/65 dark:shadow-black/20">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Recent Activities</h2>
+            <p className="mb-3 text-sm text-slate-500 dark:text-slate-300">Latest admin actions</p>
             <ul className="space-y-2 text-sm">
-              {activities.slice(0, 5).map((activity) => (
+              {filteredActivities.slice(0, 5).map((activity) => (
                 <li key={activity.id} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-800/60">
                   <p className="text-slate-700 dark:text-slate-200">{activity.text}</p>
                 </li>
               ))}
             </ul>
-          </SectionCard>
+          </div>
 
-          <SectionCard title="System Pulse" subtitle="Quick status summary">
-            <p className="text-sm text-slate-600 dark:text-slate-300">Students managed: <span className="font-semibold">{students.length}</span></p>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Exam pattern: <span className="font-semibold">3 CA + Mid + End</span></p>
-          </SectionCard>
+          <div className="rounded-2xl border border-white/80 bg-white/75 p-5 shadow-md shadow-slate-200/70 backdrop-blur-md dark:border-neutral-700/60 dark:bg-neutral-900/65 dark:shadow-black/20">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">System Pulse</h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              Students managed: <span className="font-semibold">{filteredStudents.length}</span>
+            </p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              Active filtered plans: <span className="font-semibold">{filteredPlans.length}</span>
+            </p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              Exam pattern: <span className="font-semibold">3 CA + Mid + End</span>
+            </p>
+          </div>
         </div>
       </section>
     </div>

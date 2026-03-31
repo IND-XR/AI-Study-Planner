@@ -33,6 +33,7 @@ interface AdminState {
   plans: StudyPlanControl[];
   settings: AdminSettings;
   subscriptions: SubscriptionOverview;
+  searchQuery: string;
 
   addDegree: (payload: Omit<Degree, 'id'>) => void;
   updateDegree: (id: string, payload: Partial<Degree>) => void;
@@ -53,6 +54,7 @@ interface AdminState {
 
   forceRegeneratePlan: (planId: string) => void;
   updateSettings: (payload: Partial<AdminSettings>) => void;
+  setSearchQuery: (query: string) => void;
 }
 
 export const useAdminStore = create<AdminState>((set) => ({
@@ -66,6 +68,7 @@ export const useAdminStore = create<AdminState>((set) => ({
   plans,
   settings,
   subscriptions,
+  searchQuery: '',
 
   addDegree: (payload) => {
     set((state) => ({
@@ -187,5 +190,9 @@ export const useAdminStore = create<AdminState>((set) => ({
 
   updateSettings: (payload) => {
     set((state) => ({ settings: { ...state.settings, ...payload } }));
+  },
+
+  setSearchQuery: (query) => {
+    set(() => ({ searchQuery: query }));
   },
 }));

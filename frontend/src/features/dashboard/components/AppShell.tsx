@@ -8,7 +8,7 @@ import {
   Bell,
   BookOpen,
   CalendarDays,
-  CreditCard,
+  GraduationCap,
   Home,
   ListChecks,
   LogOut,
@@ -16,6 +16,7 @@ import {
   Settings,
   Sparkles,
   Sun,
+  User,
 } from 'lucide-react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useDashboardStore } from '@/store/dashboard';
@@ -27,14 +28,17 @@ interface AppShellProps {
 const navigation = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/dashboard/subjects', label: 'Subjects', icon: BookOpen },
-  { href: '/dashboard/planner', label: 'Study Plan', icon: Sparkles },
   { href: '/dashboard/exams', label: 'Exams', icon: CalendarDays },
-  { href: '/dashboard/tasks', label: 'Daily Tasks', icon: ListChecks },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
-  { href: '/dashboard/subscription', label: 'Subscription', icon: CreditCard },
+  { href: '/dashboard/planner', label: 'Study Plan', icon: Sparkles },
+  { href: '/dashboard/analytics', label: 'Progress', icon: BarChart3 },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+  { href: '/dashboard/tasks', label: 'Daily Tasks', icon: ListChecks },
+  { href: '/dashboard/subscription', label: 'Degree', icon: GraduationCap },
 ];
+
+const isRouteActive = (pathname: string, href: string): boolean => {
+  return pathname === href || pathname.startsWith(`${href}/`);
+};
 
 export const AppShell = ({ children }: AppShellProps): JSX.Element => {
   const pathname = usePathname();
@@ -57,58 +61,72 @@ export const AppShell = ({ children }: AppShellProps): JSX.Element => {
   return (
     <ProtectedRoute requiredRole="STUDENT">
       <div className={isDark ? 'dark' : ''}>
-        <div className="flex min-h-screen bg-slate-100 text-slate-900 dark:bg-neutral-950 dark:text-slate-100">
-          <aside className="hidden w-72 border-r border-slate-200 bg-white/90 p-5 dark:border-neutral-800 dark:bg-neutral-900 lg:block">
-            <div className="rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 p-4 text-white">
-              <p className="text-sm opacity-90">AI Study Planner</p>
-              <p className="text-lg font-semibold">{profile?.name ?? 'Student'}</p>
-              <p className="text-xs opacity-80">
-                {profile?.degree ?? 'BTECH'} • Semester {profile?.semester ?? 1}
-              </p>
+        <div className="min-h-screen bg-[#eef2f7] text-slate-900 dark:bg-neutral-950 dark:text-slate-100">
+          <aside className="fixed inset-y-0 left-0 z-40 hidden w-[260px] flex-col border-r border-[#ebe3da] bg-gradient-to-b from-[#f8f5f1] to-[#f4f1ed] px-4 py-4 lg:flex">
+            <div className="mb-4 border-b border-[#e7dfd6] pb-4">
+              <p className="text-[26px] leading-none font-semibold text-slate-800">Study Planner</p>
             </div>
 
-            <nav className="mt-6 space-y-1">
-              {navigation.map(({ href, label, icon: Icon }) => {
-                const active = pathname === href;
+            <div className="mb-4 rounded-xl border border-[#e6dfd6] bg-[#f7f3ee] p-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-orange-500">
+                  <User size={18} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{profile?.name ?? 'Student'}</p>
+                  <p className="text-xs text-slate-500">
+                    {profile?.degree ?? 'BTECH'} • Sem {profile?.semester ?? 1}
+                  </p>
+                </div>
+              </div>
+            </div>
 
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition ${
-                      active
-                        ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
-                        : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-neutral-800'
-                    }`}
-                  >
-                    <Icon size={18} />
-                    {label}
-                  </Link>
-                );
-              })}
+            <nav className="flex-1 overflow-y-auto">
+              <ul className="space-y-1.5">
+                {navigation.map(({ href, label, icon: Icon }) => {
+                  const active = isRouteActive(pathname, href);
+
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        className={`group relative flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                          active
+                            ? 'bg-white text-slate-900 shadow-sm'
+                            : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
+                        }`}
+                      >
+                        {active ? <span className="absolute -left-4 h-7 w-1 rounded-full bg-[#ff8c00]" /> : null}
+                        <Icon size={16} className={active ? 'text-[#ff8c00]' : 'text-slate-500'} />
+                        {label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
             </nav>
 
             <button
               onClick={logout}
-              className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-900/20"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-500 transition hover:bg-red-50"
             >
               <LogOut size={16} />
               Logout
             </button>
           </aside>
 
-          <div className="flex min-h-screen flex-1 flex-col">
-            <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95 md:px-6">
+          <div className="flex min-h-screen flex-1 flex-col lg:pl-[260px]">
+            <header className="sticky top-0 z-30 border-b border-[#dbe1ea] bg-[#eef2f7]/95 px-4 py-3 backdrop-blur md:px-6">
               <div className="flex items-center justify-between gap-3">
                 <input
-                  className="w-full max-w-xl rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm outline-none transition focus:border-primary-500 dark:border-neutral-700 dark:bg-neutral-800"
+                  className="w-full rounded-xl border border-[#d4dae5] bg-[#f5f7fb] px-4 py-2.5 text-sm outline-none transition focus:border-primary-500"
                   placeholder="Search tasks, subjects, exams..."
                 />
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setTheme(isDark ? 'light' : 'dark')}
-                    className="rounded-lg border border-slate-200 p-2 dark:border-neutral-700"
+                    className="rounded-lg border border-[#d4dae5] bg-white p-2"
                     aria-label="toggle theme"
                   >
                     {isDark ? <Sun size={16} /> : <Moon size={16} />}
@@ -116,7 +134,7 @@ export const AppShell = ({ children }: AppShellProps): JSX.Element => {
 
                   <Link
                     href="/dashboard/notifications"
-                    className="relative rounded-lg border border-slate-200 p-2 dark:border-neutral-700"
+                    className="relative rounded-lg border border-[#d4dae5] bg-white p-2"
                   >
                     <Bell size={16} />
                     {unread > 0 ? (
@@ -129,7 +147,7 @@ export const AppShell = ({ children }: AppShellProps): JSX.Element => {
               </div>
             </header>
 
-            <main className="flex-1 px-4 py-6 md:px-6">{children}</main>
+            <main className="flex-1 overflow-x-hidden px-4 py-5 md:px-6">{children}</main>
           </div>
         </div>
       </div>
