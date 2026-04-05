@@ -34,6 +34,7 @@ const navigation = [
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
   { href: '/dashboard/tasks', label: 'Daily Tasks', icon: ListChecks },
   { href: '/dashboard/subscription', label: 'Degree', icon: GraduationCap },
+  { href: '/dashboard/upgrade', label: 'Upgrade to Pro', icon: Sparkles, isUpgrade: true },
 ];
 
 const isRouteActive = (pathname: string, href: string): boolean => {
@@ -83,9 +84,22 @@ export const AppShell = ({ children }: AppShellProps): JSX.Element => {
 
             <nav className="flex-1 overflow-y-auto">
               <ul className="space-y-1.5">
-                {navigation.map(({ href, label, icon: Icon }) => {
+                {navigation.map(({ href, label, icon: Icon, isUpgrade }) => {
                   const active = isRouteActive(pathname, href);
-
+                  if (isUpgrade) {
+                    return (
+                      <li key={href}>
+                        <Link
+                          href={href}
+                          className="group flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-orange-500 bg-white/90 border border-orange-200 shadow hover:bg-orange-100 transition-all"
+                        >
+                          <Icon size={16} className="text-orange-400" />
+                          {label}
+                          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="ml-auto text-orange-400"><path d="M6 8L10 12L14 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </Link>
+                      </li>
+                    );
+                  }
                   return (
                     <li key={href}>
                       <Link

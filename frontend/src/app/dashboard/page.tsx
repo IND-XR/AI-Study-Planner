@@ -17,6 +17,7 @@ import {
   Lock,
   Calendar,
   BookMarked,
+  ChevronDown,
 } from 'lucide-react';
 import {
   Area,
@@ -135,25 +136,42 @@ export default function DashboardPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <header className="rounded-2xl border border-orange-900/60 bg-gradient-to-r from-neutral-900 via-neutral-900 to-orange-950/40 p-6 shadow-xl shadow-orange-950/20">
-        <h1 className="text-2xl font-bold">
-          Welcome, {profile?.name ?? 'Student'}
-          <span className="ml-2 text-primary-500">👋</span>
-        </h1>
-        <p className="mt-1 text-sm text-slate-300">
-          {profile?.degree ?? 'BTECH'} • Semester {profile?.semester ?? 1} • Smart AI performance hub
-        </p>
-
+      {/* Unified Top Header */}
+      <div className="rounded-2xl border border-blue-900/60 bg-gradient-to-r from-blue-950/40 via-neutral-900 to-blue-950/40 p-6 shadow-xl shadow-blue-950/20 mb-2">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+              Welcome, {profile?.name ?? 'Student'} <span className="text-primary-500">👋</span>
+            </h1>
+            <p className="mt-1 text-base text-blue-200 font-semibold">
+              {profile?.degree || 'BTECH'} • Year {Math.ceil((profile?.semester || 1) / 2)} • Semester {profile?.semester || 1}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2 items-center">
+              <span className="text-xs text-slate-300">Applicable Exam Types:</span>
+              {applicableExamTypes.map((examType) => (
+                <span
+                  key={examType}
+                  className="inline-block rounded-full bg-blue-500/30 px-3 py-1 text-xs font-semibold text-blue-200"
+                >
+                  {examType}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="text-right min-w-[120px]">
+            <p className="text-xs text-blue-200">Enrollment</p>
+            <p className="font-mono text-lg font-bold text-white">{profile?.enrollmentNumber || 'N/A'}</p>
+          </div>
+        </div>
         <div className="mt-4 rounded-xl border border-orange-900/50 bg-orange-500/10 p-3 text-sm text-orange-200">
           <span className="font-semibold">Smart Insight:</span> {insight}
         </div>
-
         {error ? (
           <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-300">
             {error}
           </p>
         ) : null}
-      </header>
+      </div>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
@@ -321,13 +339,12 @@ export default function DashboardPage(): JSX.Element {
           </SectionCard>
 
           <SectionCard title="Subscription" subtitle="High-conversion upgrade CTA">
-            <div className="rounded-xl border border-orange-700/60 bg-gradient-to-r from-orange-500/20 to-orange-600/20 p-3">
-              <p className="flex items-center gap-1 text-sm font-semibold text-orange-200">
-                <Crown size={14} /> Upgrade to Pro
-              </p>
-              <p className="mt-1 text-xs text-slate-300">Unlock full AI planner, advanced analytics, and smart automation.</p>
-              <button className="mt-3 rounded-lg bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-600">
-                Upgrade Now
+            <div className="rounded-xl border border-orange-700/60 bg-gradient-to-r from-orange-500/20 to-orange-600/20 p-3 flex flex-col items-start">
+              <button className="flex items-center gap-2 rounded-lg bg-white/90 px-4 py-2 text-sm font-semibold text-orange-500 shadow hover:bg-orange-100 transition-all border border-orange-200">
+                <span className="flex items-center gap-1">
+                  <Sparkles size={16} className="text-orange-400" /> Upgrade to Pro
+                </span>
+                <ChevronDown size={18} className="text-orange-400" />
               </button>
             </div>
           </SectionCard>
@@ -382,33 +399,7 @@ export default function DashboardPage(): JSX.Element {
       {/* NEW TIMETABLE SECTION */}
       {/* ======================= */}
 
-      {/* Degree-Specific Info Bar */}
-      <div className="rounded-xl border border-blue-900/60 bg-gradient-to-r from-blue-950/40 via-neutral-900 to-blue-950/40 p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-blue-200">Your Program</p>
-            <p className="mt-1 text-lg font-bold text-white">
-              {profile?.degree || 'BTECH'} • Year {Math.ceil((profile?.semester || 1) / 2)} • Semester{' '}
-              {profile?.semester || 1}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-slate-400">Enrollment</p>
-            <p className="font-mono text-sm font-bold text-slate-100">{profile?.enrollmentNumber || 'N/A'}</p>
-          </div>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <p className="text-xs text-slate-300">Applicable Exam Types:</p>
-          {applicableExamTypes.map((examType) => (
-            <span
-              key={examType}
-              className="inline-block rounded-full bg-blue-500/30 px-3 py-1 text-xs font-semibold text-blue-200"
-            >
-              {examType}
-            </span>
-          ))}
-        </div>
-      </div>
+
 
       {/* Timetable Navigation Tabs */}
       <div className="rounded-t-xl border border-b-0 border-slate-700 bg-neutral-800/50 p-4">
