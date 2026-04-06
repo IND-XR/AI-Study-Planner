@@ -208,6 +208,105 @@ export default function DashboardPage(): JSX.Element {
         ) : null}
       </div>
 
+      {/* Timetable Section */}
+      <div className="rounded-t-xl border border-b-0 border-slate-700 bg-neutral-800/50 p-4">
+        <div className="flex gap-2">
+          {(['weekly', 'monthly', 'lectures', 'subjects'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 font-medium transition ${
+                activeTab === tab
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-neutral-700/50 text-slate-300 hover:bg-neutral-600'
+              }`}
+            >
+              {tab === 'weekly' && <Clock3 size={16} />}
+              {tab === 'monthly' && <Calendar size={16} />}
+              {tab === 'lectures' && <BookOpen size={16} />}
+              {tab === 'subjects' && <BookMarked size={16} />}
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-b-xl border border-t-0 border-slate-700 bg-neutral-900 p-6">
+        {activeTab === 'weekly' && (
+          <div className="space-y-4">
+            {!isPremiumUser && (
+              <div className="rounded-lg border border-purple-900/60 bg-purple-500/10 p-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="flex items-center gap-2 font-semibold text-purple-200">
+                      <Zap size={16} /> AI-Optimized Weekly Schedule
+                    </p>
+                    <p className="mt-1 text-sm text-slate-300">
+                      Get intelligent AI suggestions for the best study times based on your lectures, exams, and priorities.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowPremiumUpgrade(true)}
+                    className="flex-shrink-0 rounded-lg bg-purple-500 px-4 py-2 font-semibold text-white hover:bg-purple-600"
+                  >
+                    Upgrade to Premium (₹50)
+                  </button>
+                </div>
+              </div>
+            )}
+            <WeeklyScheduleView schedule={weeklySchedule} isPremium={isPremiumUser} />
+            <div className="flex gap-2">
+              <button
+                onClick={() => createWeeklySchedule(Math.floor(Math.random() * 52) + 1, 2026)}
+                className="rounded-lg bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-600"
+              >
+                Create New Weekly Schedule
+              </button>
+              {isPremiumUser && (
+                <button
+                  onClick={() => generateAIWeeklySchedule(Math.floor(Math.random() * 52) + 1, 2026, [], [])}
+                  className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 px-4 py-2 font-semibold text-white hover:from-purple-600 hover:to-purple-700"
+                >
+                  <Zap size={16} /> Generate AI Schedule
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'monthly' && (
+          <MonthlyPlannerPanel
+            timetable={monthlyTimetable}
+            isPremiumUser={isPremiumUser}
+            onCreateNewTimetable={() => createMonthlyTimetable(3, 2026)}
+            onGenerateAiTimetable={() => generateAIMonthlyTimetable(3, 2026, [])}
+            onOpenUpgrade={() => setShowPremiumUpgrade(true)}
+          />
+        )}
+
+        {activeTab === 'lectures' && (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-blue-900/60 bg-blue-500/10 p-4">
+              <p className="text-sm text-blue-200">
+                ℹ️ Add your college lectures here. They'll automatically appear in your weekly schedule from 9 AM to 5 PM (lecture hours).
+              </p>
+            </div>
+            <LecturesList course={profile?.course || 'MCA'} semester={profile?.semester || 1} />
+          </div>
+        )}
+
+        {activeTab === 'subjects' && (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-green-900/60 bg-green-500/10 p-4">
+              <p className="text-sm text-green-200">
+                📚 Add your custom study subjects like DSA Coding, Design Patterns, etc. {isPremiumUser ? 'AI will automatically include these in your timetable suggestions.' : 'Premium members can get AI-optimized schedules with these subjects.'}
+              </p>
+            </div>
+            <CustomSubjectManager />
+          </div>
+        )}
+      </div>
+
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Study Hours Today"
@@ -430,111 +529,6 @@ export default function DashboardPage(): JSX.Element {
         <Timeline items={timeline.slice(0, 6)} />
       </SectionCard>
 
-      {/* ======================= */}
-      {/* NEW TIMETABLE SECTION */}
-      {/* ======================= */}
-
-
-
-      {/* Timetable Navigation Tabs */}
-      <div className="rounded-t-xl border border-b-0 border-slate-700 bg-neutral-800/50 p-4">
-        <div className="flex gap-2">
-          {(['weekly', 'monthly', 'lectures', 'subjects'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 font-medium transition ${
-                activeTab === tab
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-neutral-700/50 text-slate-300 hover:bg-neutral-600'
-              }`}
-            >
-              {tab === 'weekly' && <Clock3 size={16} />}
-              {tab === 'monthly' && <Calendar size={16} />}
-              {tab === 'lectures' && <BookOpen size={16} />}
-              {tab === 'subjects' && <BookMarked size={16} />}
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Timetable Content */}
-      <div className="rounded-b-xl border border-t-0 border-slate-700 bg-neutral-900 p-6">
-        {activeTab === 'weekly' && (
-          <div className="space-y-4">
-            {!isPremiumUser && (
-              <div className="rounded-lg border border-purple-900/60 bg-purple-500/10 p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="flex items-center gap-2 font-semibold text-purple-200">
-                      <Zap size={16} /> AI-Optimized Weekly Schedule
-                    </p>
-                    <p className="mt-1 text-sm text-slate-300">
-                      Get intelligent AI suggestions for the best study times based on your lectures, exams, and priorities.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setShowPremiumUpgrade(true)}
-                    className="flex-shrink-0 rounded-lg bg-purple-500 px-4 py-2 font-semibold text-white hover:bg-purple-600"
-                  >
-                    Upgrade to Premium (₹50)
-                  </button>
-                </div>
-              </div>
-            )}
-            <WeeklyScheduleView schedule={weeklySchedule} isPremium={isPremiumUser} />
-            <div className="flex gap-2">
-              <button
-                onClick={() => createWeeklySchedule(Math.floor(Math.random() * 52) + 1, 2026)}
-                className="rounded-lg bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-600"
-              >
-                Create New Weekly Schedule
-              </button>
-              {isPremiumUser && (
-                <button
-                  onClick={() => generateAIWeeklySchedule(Math.floor(Math.random() * 52) + 1, 2026, [], [])}
-                  className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 px-4 py-2 font-semibold text-white hover:from-purple-600 hover:to-purple-700"
-                >
-                  <Zap size={16} /> Generate AI Schedule
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'monthly' && (
-          <MonthlyPlannerPanel
-            timetable={monthlyTimetable}
-            isPremiumUser={isPremiumUser}
-            onCreateNewTimetable={() => createMonthlyTimetable(3, 2026)}
-            onGenerateAiTimetable={() => generateAIMonthlyTimetable(3, 2026, [])}
-            onOpenUpgrade={() => setShowPremiumUpgrade(true)}
-          />
-        )}
-
-        {activeTab === 'lectures' && (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-blue-900/60 bg-blue-500/10 p-4">
-              <p className="text-sm text-blue-200">
-                ℹ️ Add your college lectures here. They'll automatically appear in your weekly schedule from 9 AM to 5 PM (lecture hours).
-              </p>
-            </div>
-            <LecturesList course={profile?.course || 'MCA'} semester={profile?.semester || 1} />
-          </div>
-        )}
-
-        {activeTab === 'subjects' && (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-green-900/60 bg-green-500/10 p-4">
-              <p className="text-sm text-green-200">
-                📚 Add your custom study subjects like DSA Coding, Design Patterns, etc. {isPremiumUser ? 'AI will automatically include these in your timetable suggestions.' : 'Premium members can get AI-optimized schedules with these subjects.'}
-              </p>
-            </div>
-            <CustomSubjectManager />
-          </div>
-        )}
-      </div>
       {/* Premium Upgrade Modal */}
       {showPremiumUpgrade && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 p-4">
