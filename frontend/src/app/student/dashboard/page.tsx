@@ -1,10 +1,35 @@
 'use client';
 
 import { User, Book, ListChecks, BarChart3, Bell, Settings, Crown, Calendar, Zap, Rocket, Search } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import {
+  addMonths,
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  isSameMonth,
+  isToday,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+} from 'date-fns';
 
 export default function StudentDashboardPage() {
   const [tab, setTab] = useState<'weekly' | 'monthly'>('weekly');
+  const [visibleMonth, setVisibleMonth] = useState(new Date());
+
+  const monthCalendar = useMemo(() => {
+    const monthStart = startOfMonth(visibleMonth);
+    const monthEnd = endOfMonth(visibleMonth);
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+    return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  }, [visibleMonth]);
+
+  const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
   return (
     <div style={{ fontFamily: 'Inter, sans-serif', background: '#f8f9fb', minHeight: '100vh', padding: 0 }}>
       {/* Top Bar */}
@@ -53,10 +78,72 @@ export default function StudentDashboardPage() {
               <button onClick={() => setTab('monthly')} style={{ flex: 1, padding: 18, fontWeight: 700, fontSize: 16, background: tab === 'monthly' ? '#fff7ed' : '#fff', color: tab === 'monthly' ? '#ff9100' : '#888', border: 'none', borderRadius: '18px 18px 0 0', cursor: 'pointer' }}>Monthly</button>
             </div>
             <div style={{ padding: 32 }}>
-              {/* Calendar Placeholder */}
-              <div style={{ minHeight: 220, color: '#bbb', fontWeight: 600, fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8f9fb', borderRadius: 12 }}>
-                {tab === 'weekly' ? 'Weekly Calendar (Coming Soon)' : 'Monthly Calendar (Coming Soon)'}
-              </div>
+              {tab === 'weekly' ? (
+                <div style={{ minHeight: 220, color: '#bbb', fontWeight: 600, fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8f9fb', borderRadius: 12 }}>
+                  Weekly Calendar (Coming Soon)
+                </div>
+              ) : (
+                <div style={{ background: '#f8f9fb', borderRadius: 16, padding: 16, border: '1px solid #eee' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                    <button
+                      onClick={() => setVisibleMonth((current) => subMonths(current, 1))}
+                      style={{ border: 'none', background: '#fff', borderRadius: 10, width: 36, height: 36, boxShadow: '0 1px 4px #0001', cursor: 'pointer', fontSize: 18, color: '#666' }}
+                      aria-label="Previous month"
+                    >
+                      ‹
+                    </button>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: '#222' }}>{format(visibleMonth, 'MMMM yyyy')}</div>
+                      <div style={{ fontSize: 12, color: '#888' }}>Select a date for your timetable</div>
+                    </div>
+                    <button
+                      onClick={() => setVisibleMonth((current) => addMonths(current, 1))}
+                      style={{ border: 'none', background: '#fff', borderRadius: 10, width: 36, height: 36, boxShadow: '0 1px 4px #0001', cursor: 'pointer', fontSize: 18, color: '#666' }}
+                      aria-label="Next month"
+                    >
+                      ›
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 8, marginBottom: 10 }}>
+                    {weekDays.map((day) => (
+                      <div key={day} style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#888' }}>{day}</div>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 8 }}>
+                    {monthCalendar.map((day) => {
+                      const selected = isSameDay(day, new Date());
+                      const inMonth = isSameMonth(day, visibleMonth);
+                      return (
+                        <button
+                          key={day.toISOString()}
+                          type="button"
+                          style={{
+                            aspectRatio: '1 / 1',
+                            borderRadius: 12,
+                            border: '1px solid ' + (selected ? '#ff9100' : '#ececec'),
+                            background: selected ? '#ff9100' : inMonth ? '#fff' : '#fafafa',
+                            color: selected ? '#fff' : inMonth ? '#222' : '#c4c4c4',
+                            fontWeight: selected ? 700 : 500,
+                            boxShadow: selected ? '0 8px 16px #ff910033' : 'none',
+                            cursor: 'pointer',
+                            position: 'relative',
+                          }}
+                          onClick={() => setVisibleMonth(day)}
+                        >
+                          <span style={{ fontSize: 14 }}>{format(day, 'd')}</span>
+                          {isToday(day) ? (
+                            <span style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', fontSize: 10, fontWeight: 700 }}>
+                              Today
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

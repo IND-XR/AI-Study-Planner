@@ -176,6 +176,16 @@ export const apiClient = {
   getProgressHistory: (topicId?: string) =>
     client.get('/progress', { params: { topicId } }),
 
+  // Calendar Headings
+  getCalendarHeadings: (month: number, year: number) =>
+    client.get('/api/timetable/headings', { params: { month, year } }),
+  createCalendarHeading: (data: { date: string; title: string; tag: 'STUDY' | 'CODING' | 'EXAM' | 'OTHER' }) =>
+    client.post('/api/timetable/headings', data),
+  reorderCalendarHeadings: (data: { date: string; headingIds: string[] }) =>
+    client.patch('/api/timetable/headings/reorder', data),
+  deleteCalendarHeading: (id: string) =>
+    client.delete(`/api/timetable/headings/${id}`),
+
   // ✅ TOKEN HELPERS
   setToken: (token: string, refreshToken?: string) => {
     localStorage.setItem(TOKEN_KEY, token);

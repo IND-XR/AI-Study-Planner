@@ -33,14 +33,37 @@ import { PlannerBoard } from '@/features/dashboard/components/PlannerBoard';
 import { Timeline } from '@/features/dashboard/components/Timeline';
 import { WeeklyScheduleView } from '@/features/dashboard/components/WeeklyScheduleView';
 import { MonthlyTimetableView } from '@/features/dashboard/components/MonthlyTimetableView';
+import { MonthlyPlannerPanel } from '@/features/dashboard/components/MonthlyPlannerPanel';
 import { LecturesList } from '@/features/dashboard/components/LecturesList';
 import { CustomSubjectManager } from '@/features/dashboard/components/CustomSubjectManager';
 import { useSmartInsight } from '@/features/dashboard/hooks';
+import { apiClient } from '@/api/client';
 import { useDashboardStore } from '@/store/dashboard';
 import { useTimetableStore } from '@/store/timetable';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  addMonths,
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  isSameMonth,
+  isToday,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+} from 'date-fns';
 
 export default function DashboardPage(): JSX.Element {
+  type CalendarHeadingTag = 'STUDY' | 'CODING' | 'EXAM' | 'OTHER';
+  type CalendarHeadingItem = {
+    id: string;
+    title: string;
+    tag: CalendarHeadingTag;
+    position: number;
+  };
+
   const {
     profile,
     overview,
@@ -93,7 +116,6 @@ export default function DashboardPage(): JSX.Element {
   const insight = useSmartInsight();
   const [activeTab, setActiveTab] = useState<'weekly' | 'monthly' | 'lectures' | 'subjects'>('weekly');
   const [showPremiumUpgrade, setShowPremiumUpgrade] = useState(false);
-
   if (isLoading && !profile) {
     return (
       <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-5 text-sm text-slate-200">
@@ -119,8 +141,7 @@ export default function DashboardPage(): JSX.Element {
   const visibleNotifications =
     urgentNotifications.length > 0 ? urgentNotifications : notifications.slice(0, 3);
   const productivityScore = Math.round(
-    analytics.reduce((accumulator, item) => accumulator + item.productivityScore, 0) /
-      Math.max(1, analytics.length),
+    analytics.reduce((accumulator, item) => accumulator + item.productivityScore, 0) / Math.max(1, analytics.length),
   );
   const weeklyHours = analytics.reduce((accumulator, item) => accumulator + item.studyHours, 0);
 
@@ -135,7 +156,6 @@ export default function DashboardPage(): JSX.Element {
   else if (normalizedDegree.includes('MTECH')) studentDegreeKey = 'MTECH';
   else if (normalizedDegree.includes('BTECH')) studentDegreeKey = 'BTECH';
 
-  // Degree-specific exam types
   const examTypes = {
     BCA: ['CA1', 'CA2', 'CA3', 'MIDTERM', 'ENDTERM'],
     MCA: ['CA1', 'CA2', 'CA3', 'MIDTERM', 'ENDTERM'],
@@ -150,16 +170,17 @@ export default function DashboardPage(): JSX.Element {
     <div className="space-y-6">
       {/* Unified Top Header */}
       <div className="rounded-2xl border border-blue-900/60 bg-gradient-to-r from-blue-950/40 via-neutral-900 to-blue-950/40 p-6 shadow-xl shadow-blue-950/20 mb-2">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            <h1 className="flex items-center gap-2 text-2xl font-bold text-white">
               Welcome, {profile?.name ?? 'Student'} <span className="text-primary-500">👋</span>
             </h1>
-            <p className="mt-1 text-base text-blue-200 font-semibold">
+            <p className="mt-1 text-base font-semibold text-blue-200">
               {degreeName}
-              {showDegreeCode ? ` (${degreeCode})` : ''} • Year {Math.ceil((profile?.semester || 1) / 2)} • Semester {profile?.semester || 1}
+              {showDegreeCode ? ` (${degreeCode})` : ''} • Year {Math.ceil((profile?.semester || 1) / 2)} • Semester{' '}
+              {profile?.semester || 1}
             </p>
-            <div className="mt-2 flex flex-wrap gap-2 items-center">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="text-xs text-slate-300">Applicable Exam Types:</span>
               {applicableExamTypes.map((examType) => (
                 <span
@@ -171,7 +192,8 @@ export default function DashboardPage(): JSX.Element {
               ))}
             </div>
           </div>
-          <div className="text-right min-w-[120px]">
+
+          <div className="min-w-[120px] text-right">
             <p className="text-xs text-blue-200">Enrollment</p>
             <p className="font-mono text-lg font-bold text-white">{profile?.enrollmentNumber || 'N/A'}</p>
           </div>
@@ -212,53 +234,6 @@ export default function DashboardPage(): JSX.Element {
           icon={<TrendingUp size={18} />}
         />
       </section>
-{/* 
-      <SectionCard title="My Profile" subtitle="Your current academic profile details">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border border-slate-700 bg-neutral-800/80 p-3">
-            <p className="text-xs text-slate-400">Full Name</p>
-            <p className="mt-1 text-sm font-semibold text-slate-100">
-              {profile?.name || 'N/A'}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-700 bg-neutral-800/80 p-3">
-            <p className="text-xs text-slate-400">Enrollment Number</p>
-            <p className="mt-1 text-sm font-semibold text-slate-100">
-              {profile?.enrollmentNumber || 'N/A'}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-700 bg-neutral-800/80 p-3">
-            <p className="text-xs text-slate-400">Degree</p>
-            <p className="mt-1 text-sm font-semibold text-slate-100">
-              {degreeName}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-700 bg-neutral-800/80 p-3">
-            <p className="text-xs text-slate-400">Degree Code</p>
-            <p className="mt-1 text-sm font-semibold text-slate-100">
-              {degreeCode}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-700 bg-neutral-800/80 p-3">
-            <p className="text-xs text-slate-400">Semester</p>
-            <p className="mt-1 text-sm font-semibold text-slate-100">
-              {profile?.semester || 'N/A'}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-700 bg-neutral-800/80 p-3">
-            <p className="text-xs text-slate-400">Section</p>
-            <p className="mt-1 text-sm font-semibold text-slate-100">
-              {profile?.department || 'N/A'}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-700 bg-neutral-800/80 p-3">
-            <p className="text-xs text-slate-400">Role</p>
-            <p className="mt-1 text-sm font-semibold text-slate-100">
-              {profile?.role || 'STUDENT'}
-            </p>
-          </div>
-        </div>
-      </SectionCard> */}
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="xl:col-span-8 space-y-4">
@@ -486,7 +461,6 @@ export default function DashboardPage(): JSX.Element {
 
       {/* Timetable Content */}
       <div className="rounded-b-xl border border-t-0 border-slate-700 bg-neutral-900 p-6">
-        {/* Weekly Schedule Tab */}
         {activeTab === 'weekly' && (
           <div className="space-y-4">
             {!isPremiumUser && (
@@ -497,8 +471,7 @@ export default function DashboardPage(): JSX.Element {
                       <Zap size={16} /> AI-Optimized Weekly Schedule
                     </p>
                     <p className="mt-1 text-sm text-slate-300">
-                      Get intelligent AI suggestions for the best study times based on your lectures, exams, and
-                      priorities.
+                      Get intelligent AI suggestions for the best study times based on your lectures, exams, and priorities.
                     </p>
                   </div>
                   <button
@@ -513,23 +486,14 @@ export default function DashboardPage(): JSX.Element {
             <WeeklyScheduleView schedule={weeklySchedule} isPremium={isPremiumUser} />
             <div className="flex gap-2">
               <button
-                onClick={() => {
-                  const newSchedule = createWeeklySchedule(Math.floor(Math.random() * 52) + 1, 2026);
-                }}
+                onClick={() => createWeeklySchedule(Math.floor(Math.random() * 52) + 1, 2026)}
                 className="rounded-lg bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-600"
               >
                 Create New Weekly Schedule
               </button>
               {isPremiumUser && (
                 <button
-                  onClick={() => {
-                    const newSchedule = generateAIWeeklySchedule(
-                      Math.floor(Math.random() * 52) + 1,
-                      2026,
-                      [],
-                      []
-                    );
-                  }}
+                  onClick={() => generateAIWeeklySchedule(Math.floor(Math.random() * 52) + 1, 2026, [], [])}
                   className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 px-4 py-2 font-semibold text-white hover:from-purple-600 hover:to-purple-700"
                 >
                   <Zap size={16} /> Generate AI Schedule
@@ -539,68 +503,27 @@ export default function DashboardPage(): JSX.Element {
           </div>
         )}
 
-        {/* Monthly Timetable Tab */}
         {activeTab === 'monthly' && (
-          <div className="space-y-4">
-            {!isPremiumUser && (
-              <div className="rounded-lg border border-purple-900/60 bg-purple-500/10 p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="flex items-center gap-2 font-semibold text-purple-200">
-                      <Zap size={16} /> AI-Optimized Monthly Planner
-                    </p>
-                    <p className="mt-1 text-sm text-slate-300">
-                      Plan your entire month with AI suggestions for study sessions prioritized by exam dates and
-                      subject difficulty.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setShowPremiumUpgrade(true)}
-                    className="flex-shrink-0 rounded-lg bg-purple-500 px-4 py-2 font-semibold text-white hover:bg-purple-600"
-                  >
-                    Upgrade to Premium (₹50)
-                  </button>
-                </div>
-              </div>
-            )}
-            <MonthlyTimetableView timetable={monthlyTimetable} isPremium={isPremiumUser} />
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  const newTimetable = createMonthlyTimetable(3, 2026);
-                }}
-                className="rounded-lg bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-600"
-              >
-                Create New Monthly Timetable
-              </button>
-              {isPremiumUser && (
-                <button
-                  onClick={() => {
-                    const newTimetable = generateAIMonthlyTimetable(3, 2026, []);
-                  }}
-                  className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 px-4 py-2 font-semibold text-white hover:from-purple-600 hover:to-purple-700"
-                >
-                  <Zap size={16} /> AI Generate Monthly Plan
-                </button>
-              )}
-            </div>
-          </div>
+          <MonthlyPlannerPanel
+            timetable={monthlyTimetable}
+            isPremiumUser={isPremiumUser}
+            onCreateNewTimetable={() => createMonthlyTimetable(3, 2026)}
+            onGenerateAiTimetable={() => generateAIMonthlyTimetable(3, 2026, [])}
+            onOpenUpgrade={() => setShowPremiumUpgrade(true)}
+          />
         )}
 
-        {/* Lectures Tab */}
         {activeTab === 'lectures' && (
           <div className="space-y-4">
             <div className="rounded-lg border border-blue-900/60 bg-blue-500/10 p-4">
               <p className="text-sm text-blue-200">
-                ℹ️ Add your college lectures here. They'll automatically appear in your weekly schedule from 9 AM to 5 PM
-                (lecture hours).
+                ℹ️ Add your college lectures here. They'll automatically appear in your weekly schedule from 9 AM to 5 PM (lecture hours).
               </p>
             </div>
             <LecturesList course={profile?.course || 'MCA'} semester={profile?.semester || 1} />
           </div>
         )}
 
-        {/* Custom Subjects Tab */}
         {activeTab === 'subjects' && (
           <div className="space-y-4">
             <div className="rounded-lg border border-green-900/60 bg-green-500/10 p-4">
@@ -612,7 +535,6 @@ export default function DashboardPage(): JSX.Element {
           </div>
         )}
       </div>
-
       {/* Premium Upgrade Modal */}
       {showPremiumUpgrade && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 p-4">

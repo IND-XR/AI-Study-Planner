@@ -31,12 +31,28 @@ model User {
   notifications    Notification[]
   messages         Message[]
   messageReads     MessageRead[]
+  calendarHeadings CalendarHeading[]
   degree           Degree?          @relation(fields: [degreeId], references: [id], onDelete: SetNull)
 
   @@index([enrollmentNumber])
   @@index([course])
   @@index([semester])
   @@index([degreeId])
+}
+
+model CalendarHeading {
+  id        String             @id @default(uuid())
+  userId    String
+  date      DateTime
+  title     String
+  tag       CalendarHeadingTag @default(STUDY)
+  position  Int                @default(0)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([userId, date, position])
 }
 
 model Degree {
@@ -265,4 +281,11 @@ model MessageRead {
 enum Role {
   ADMIN
   STUDENT
+}
+
+enum CalendarHeadingTag {
+  STUDY
+  CODING
+  EXAM
+  OTHER
 }
