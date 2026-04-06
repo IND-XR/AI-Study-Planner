@@ -21,21 +21,43 @@ model User {
   course           String?
   department       String?
   semester         Int?
+  degreeId         String?
   supabaseId       String?
   exams            Exam[]
   progressRecords  ProgressRecord[]
   studyPlans       StudyPlan[]
   subjects         Subject[]
   topics           Topic[]
+  notifications    Notification[]
+  messages         Message[]
+  messageReads     MessageRead[]
+  degree           Degree?          @relation(fields: [degreeId], references: [id], onDelete: SetNull)
 
   @@index([enrollmentNumber])
   @@index([course])
   @@index([semester])
+  @@index([degreeId])
+}
+
+model Degree {
+  id               String           @id @default(uuid())
+  name             String           @unique
+  code             String           @unique
+  description      String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  subjects         Subject[]
+  timetables       AdminTimetable[]
+  users            User[]
+  messageTargets   Message[]
+
+  @@index([code])
 }
 
 model Subject {
   id           String   @id @default(uuid())
-  userId       String
+  userId       String?
+  degreeId     String?
   name         String
   description  String?
   academicYear String?
@@ -46,11 +68,13 @@ model Subject {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   exams        Exam[]
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  degree       Degree?  @relation(fields: [degreeId], references: [id], onDelete: Cascade)
   topics       Topic[]
 
-  @@unique([userId, name, academicYear])
+  @@unique([degreeId, name, academicYear], name: "degreeSubjectUnique")
   @@index([userId])
+  @@index([degreeId])
   @@index([createdAt])
 }
 
@@ -171,6 +195,71 @@ model ProgressRecord {
   @@index([userId])
   @@index([topicId])
   @@index([studyDate])
+}
+
+model AdminTimetable {
+  id        String   @id @default(uuid())
+  degreeId  String
+  day       String   @default("Monday")
+  time      String
+  subject   String
+  room      String?
+  type      String   @default("Lecture")
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  degree    Degree   @relation(fields: [degreeId], references: [id], onDelete: Cascade)
+
+  @@index([degreeId])
+  @@index([day])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("announcement")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  userId    String?
+  degreeId  String?
+  title     String
+  content   String
+  type      String   @default("message")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  degree    Degree?  @relation(fields: [degreeId], references: [id], onDelete: Cascade)
+  reads     MessageRead[]
+
+  @@index([userId])
+  @@index([degreeId])
+}
+
+model MessageRead {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@index([messageId])
 }
 
 enum Role {

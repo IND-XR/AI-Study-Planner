@@ -125,13 +125,28 @@ export class AuthService {
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
+      include: {
+        degree: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
+      },
     });
 
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
 
-    return this.sanitizeUser(user);
+    const safeUser = this.sanitizeUser(user);
+    return {
+      ...safeUser,
+      degree: user.degree?.code || user.course || 'OTHER',
+      degreeName: user.degree?.name || user.course || null,
+      section: user.department || null,
+    };
   }
 
   /**

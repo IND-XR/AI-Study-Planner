@@ -1,10 +1,61 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '@libs/database/prisma.service';
 import { UpdateUserDto } from './dto/user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
+
+  async createStudent(createUserDto: CreateUserDto) {
+    const existing = await this.prisma.user.findUnique({
+      where: { enrollmentNumber: createUserDto.enrollmentNumber },
+      select: { id: true },
+    });
+
+    if (existing) {
+      throw new ConflictException('Enrollment number already exists');
+    }
+
+    const degree = await this.prisma.degree.findUnique({
+      where: { id: createUserDto.degreeId },
+      select: { id: true },
+    });
+
+    if (!degree) {
+      throw new NotFoundException('Degree not found');
+    }
+
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+    return this.prisma.user.create({
+      data: {
+        name: createUserDto.name,
+        enrollmentNumber: createUserDto.enrollmentNumber,
+        password: hashedPassword,
+        degreeId: createUserDto.degreeId,
+        semester: createUserDto.semester,
+        department: createUserDto.section,
+        role: 'STUDENT',
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        enrollmentNumber: true,
+        semester: true,
+        degreeId: true,
+        department: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+  }
 
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -69,8 +120,8 @@ export class UserService {
   }
   
   async getAllUsers() {
-  return this.prisma.user.findMany();
-}
+    return this.prisma.user.findMany();
+  }
 
   async deleteAccount(userId: string) {
     // Delete all user data

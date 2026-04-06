@@ -12,6 +12,7 @@ import {
   Home,
   ListChecks,
   LogOut,
+  Mail,
   Moon,
   Settings,
   Sparkles,
@@ -34,6 +35,7 @@ const navigation = [
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
   { href: '/dashboard/tasks', label: 'Daily Tasks', icon: ListChecks },
   { href: '/dashboard/subscription', label: 'Degree', icon: GraduationCap },
+  { href: '/dashboard/messages', label: 'Messages', icon: Mail },
   { href: '/dashboard/upgrade', label: 'Upgrade to Pro', icon: Sparkles, isUpgrade: true },
 ];
 
@@ -53,6 +55,9 @@ export const AppShell = ({ children }: AppShellProps): JSX.Element => {
   const setTheme = useDashboardStore((state) => state.setTheme);
 
   const isDark = settings.theme === 'dark';
+  const degreeName = profile?.course || profile?.degree || 'BTECH';
+  const degreeCode = profile?.degree || 'N/A';
+  const showDegreeCode = Boolean(profile?.course && profile?.degree && profile.course !== profile.degree);
 
   const logout = (): void => {
     localStorage.clear();
@@ -76,9 +81,29 @@ export const AppShell = ({ children }: AppShellProps): JSX.Element => {
                 <div>
                   <p className="text-sm font-semibold text-slate-900">{profile?.name ?? 'Student'}</p>
                   <p className="text-xs text-slate-500">
-                    {profile?.degree ?? 'BTECH'} • Sem {profile?.semester ?? 1}
+                    {degreeName}
+                    {showDegreeCode ? ` (${degreeCode})` : ''} • Sem {profile?.semester ?? 1}
                   </p>
                 </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-slate-600">
+                <p>
+                  <span className="font-semibold text-slate-700">Enroll:</span>{' '}
+                  {profile?.enrollmentNumber ?? 'N/A'}
+                </p>
+                <p>
+                  <span className="font-semibold text-slate-700">Section:</span>{' '}
+                  {profile?.department ?? 'N/A'}
+                </p>
+                <p>
+                  <span className="font-semibold text-slate-700">Degree:</span>{' '}
+                  {degreeName}
+                  {/* {showDegreeCode ? ` (${degreeCode})` : ''} */}
+                </p>
+                <p>
+                  <span className="font-semibold text-slate-700">Role:</span>{' '}
+                  {profile?.role ?? 'STUDENT'}
+                </p>
               </div>
             </div>
 

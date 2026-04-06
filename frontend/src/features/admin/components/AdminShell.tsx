@@ -10,10 +10,12 @@ import {
   CalendarDays,
   ChevronDown,
   Circle,
+  GraduationCap,
   LayoutGrid,
   Library,
   LogOut,
   FileText,
+  MessageSquare,
   PenSquare,
   ScrollText,
   Settings,
@@ -30,6 +32,10 @@ const navItems = [
   { href: '/admin/topics', label: 'Topics', icon: ScrollText },
   { href: '/admin/study-plans', label: 'Study Plan', icon: Briefcase },
   { href: '/admin/progress', label: 'Progress', icon: Library },
+  { href: '/admin/add-student', label: 'Add Student', icon: User },
+  { href: '/admin/add-degree', label: 'Add Degree', icon: GraduationCap },
+  { href: '/admin/message', label: 'Send Message', icon: MessageSquare },
+  { href: '/admin/messages', label: 'Message History', icon: MessageSquare },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ] as const;
 

@@ -124,15 +124,27 @@ export default function DashboardPage(): JSX.Element {
   );
   const weeklyHours = analytics.reduce((accumulator, item) => accumulator + item.studyHours, 0);
 
+  const degreeName = profile?.course || profile?.degree || 'BTECH';
+  const degreeCode = profile?.degree || 'N/A';
+  const showDegreeCode = Boolean(profile?.course && profile?.degree && profile.course !== profile.degree);
+
+  const normalizedDegree = degreeName.toUpperCase();
+  let studentDegreeKey: 'BCA' | 'MCA' | 'BTECH' | 'MTECH' | 'OTHER' = 'OTHER';
+  if (normalizedDegree.includes('MCA')) studentDegreeKey = 'MCA';
+  else if (normalizedDegree.includes('BCA')) studentDegreeKey = 'BCA';
+  else if (normalizedDegree.includes('MTECH')) studentDegreeKey = 'MTECH';
+  else if (normalizedDegree.includes('BTECH')) studentDegreeKey = 'BTECH';
+
   // Degree-specific exam types
   const examTypes = {
+    BCA: ['CA1', 'CA2', 'CA3', 'MIDTERM', 'ENDTERM'],
     MCA: ['CA1', 'CA2', 'CA3', 'MIDTERM', 'ENDTERM'],
     BTECH: ['CA1', 'CA2', 'CA3', 'MIDTERM', 'ENDTERM'],
     MTECH: ['CA1', 'CA2', 'CA3', 'MIDTERM', 'ENDTERM'],
+    OTHER: ['CA1', 'CA2', 'CA3', 'MIDTERM', 'ENDTERM'],
   };
 
-  const studentDegree = (profile?.degree || 'BTECH') as keyof typeof examTypes;
-  const applicableExamTypes = examTypes[studentDegree] || examTypes.BTECH;
+  const applicableExamTypes = examTypes[studentDegreeKey] || examTypes.BTECH;
 
   return (
     <div className="space-y-6">
@@ -144,7 +156,8 @@ export default function DashboardPage(): JSX.Element {
               Welcome, {profile?.name ?? 'Student'} <span className="text-primary-500">👋</span>
             </h1>
             <p className="mt-1 text-base text-blue-200 font-semibold">
-              {profile?.degree || 'BTECH'} • Year {Math.ceil((profile?.semester || 1) / 2)} • Semester {profile?.semester || 1}
+              {degreeName}
+              {showDegreeCode ? ` (${degreeCode})` : ''} • Year {Math.ceil((profile?.semester || 1) / 2)} • Semester {profile?.semester || 1}
             </p>
             <div className="mt-2 flex flex-wrap gap-2 items-center">
               <span className="text-xs text-slate-300">Applicable Exam Types:</span>
@@ -199,6 +212,53 @@ export default function DashboardPage(): JSX.Element {
           icon={<TrendingUp size={18} />}
         />
       </section>
+{/* 
+      <SectionCard title="My Profile" subtitle="Your current academic profile details">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-slate-700 bg-neutral-800/80 p-3">
+            <p className="text-xs text-slate-400">Full Name</p>
+            <p className="mt-1 text-sm font-semibold text-slate-100">
+              {profile?.name || 'N/A'}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700 bg-neutral-800/80 p-3">
+            <p className="text-xs text-slate-400">Enrollment Number</p>
+            <p className="mt-1 text-sm font-semibold text-slate-100">
+              {profile?.enrollmentNumber || 'N/A'}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700 bg-neutral-800/80 p-3">
+            <p className="text-xs text-slate-400">Degree</p>
+            <p className="mt-1 text-sm font-semibold text-slate-100">
+              {degreeName}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700 bg-neutral-800/80 p-3">
+            <p className="text-xs text-slate-400">Degree Code</p>
+            <p className="mt-1 text-sm font-semibold text-slate-100">
+              {degreeCode}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700 bg-neutral-800/80 p-3">
+            <p className="text-xs text-slate-400">Semester</p>
+            <p className="mt-1 text-sm font-semibold text-slate-100">
+              {profile?.semester || 'N/A'}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700 bg-neutral-800/80 p-3">
+            <p className="text-xs text-slate-400">Section</p>
+            <p className="mt-1 text-sm font-semibold text-slate-100">
+              {profile?.department || 'N/A'}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700 bg-neutral-800/80 p-3">
+            <p className="text-xs text-slate-400">Role</p>
+            <p className="mt-1 text-sm font-semibold text-slate-100">
+              {profile?.role || 'STUDENT'}
+            </p>
+          </div>
+        </div>
+      </SectionCard> */}
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="xl:col-span-8 space-y-4">

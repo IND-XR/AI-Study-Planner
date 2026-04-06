@@ -11,6 +11,10 @@ import { ExamModule } from '@modules/exam/exam.module';
 import { TopicModule } from '@modules/topic/topic.module';
 import { StudyPlanModule } from '@modules/study-plan/study-plan.module';
 import { ProgressModule } from '@modules/progress/progress.module';
+import { DegreeModule } from '@modules/degree/degree.module';
+import { TimetableModule } from '@modules/timetable/timetable.module';
+import { NotificationModule } from '@modules/notification/notification.module';
+import { MessageModule } from '@modules/message/message.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -51,6 +55,10 @@ import { AppService } from './app.service';
     TopicModule,
     StudyPlanModule,
     ProgressModule,
+    DegreeModule,
+    TimetableModule,
+    NotificationModule,
+    MessageModule,
   ],
   controllers: [AppController],
   providers: [AppService],

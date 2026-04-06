@@ -33,13 +33,28 @@ export const dashboardApi = {
       const profile = response?.data?.data ?? response?.data;
       if (!profile) return defaultUserProfile;
 
+      const degreeFromApi =
+        profile.degree ||
+        profile.degreeCode ||
+        profile.degreeName ||
+        profile.course ||
+        defaultUserProfile.degree;
+
+      const normalizedDegree = String(degreeFromApi).toUpperCase();
+
       return {
         id: profile.id ?? defaultUserProfile.id,
         name: profile.name ?? defaultUserProfile.name,
         email: profile.email ?? defaultUserProfile.email,
-        degree: profile.degree ?? defaultUserProfile.degree,
+        degree: (normalizedDegree as UserProfile['degree']) ?? defaultUserProfile.degree,
         semester: Number(profile.semester ?? defaultUserProfile.semester),
         role: profile.role ?? 'STUDENT',
+        enrollmentNumber:
+          profile.enrollmentNumber ?? defaultUserProfile.enrollmentNumber,
+        course: profile.degreeName ?? profile.course ?? undefined,
+        department: profile.section ?? profile.department ?? undefined,
+        profilePicture: profile.profilePicture ?? undefined,
+        lastLogin: profile.lastLogin ?? undefined,
       };
     } catch {
       return fallback(defaultUserProfile);
