@@ -10,6 +10,15 @@ import { CalendarHeadingTag } from '@prisma/client';
 export class TimetableService {
   private readonly logger = new Logger(TimetableService.name);
 
+  private extractSectionFromNotes(notes?: string | null): string | null {
+    if (!notes) {
+      return null;
+    }
+
+    const match = notes.match(/SECTION:([^|]+)/i);
+    return match?.[1]?.trim()?.toUpperCase() || null;
+  }
+
   constructor(
     private prisma: PrismaService,
     private notificationService: NotificationService,
@@ -32,6 +41,7 @@ export class TimetableService {
         time: `${dto.startTime}-${dto.endTime}`,
         room: dto.room,
         type: dto.type,
+        notes: dto.section ? `SECTION:${dto.section.toUpperCase()}` : null,
       },
     });
 
@@ -39,11 +49,68 @@ export class TimetableService {
     await this.notifyDegreeStudents(
       dto.degreeId,
       'Timetable Updated',
-      `New timetable entry added for ${dto.day}: ${dto.subject} at ${dto.room}`,
+      `New timetable entry added for ${dto.day}: ${dto.subject} at ${dto.room}${dto.section ? ` (Section ${dto.section.toUpperCase()})` : ''}`,
     );
 
-    this.logger.log(`Timetable created for degree: ${degree.name}`);
+    this.logger.log(`Timetable created for degree: ${degree.name}${dto.section ? ` section ${dto.section.toUpperCase()}` : ''}`);
     return timetable;
+  }
+
+  async updateTimetable(id: string, dto: CreateTimetableDto) {
+    const existing = await this.prisma.adminTimetable.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Timetable entry not found');
+    }
+
+    const degree = await this.prisma.degree.findUnique({
+      where: { id: dto.degreeId },
+    });
+
+    if (!degree) {
+      throw new NotFoundException('Degree not found');
+    }
+
+    const updated = await this.prisma.adminTimetable.update({
+      where: { id },
+      data: {
+        degreeId: dto.degreeId,
+        day: dto.day,
+        subject: dto.subject,
+        time: `${dto.startTime}-${dto.endTime}`,
+        room: dto.room,
+        type: dto.type,
+        notes: dto.section ? `SECTION:${dto.section.toUpperCase()}` : null,
+      },
+    });
+
+    await this.notifyDegreeStudents(
+      dto.degreeId,
+      'Timetable Updated',
+      `Timetable entry updated for ${dto.day}: ${dto.subject} at ${dto.room}${dto.section ? ` (Section ${dto.section.toUpperCase()})` : ''}`,
+    );
+
+    this.logger.log(`Timetable updated: ${updated.id} for degree ${degree.name}`);
+    return updated;
+  }
+
+  async deleteTimetable(id: string) {
+    const existing = await this.prisma.adminTimetable.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Timetable entry not found');
+    }
+
+    await this.prisma.adminTimetable.delete({
+      where: { id },
+    });
+
+    this.logger.log(`Timetable deleted: ${id}`);
+    return { success: true };
   }
 
   async getTimetableByDegree(degreeId: string) {
@@ -55,10 +122,15 @@ export class TimetableService {
       throw new NotFoundException('Degree not found');
     }
 
-    return this.prisma.adminTimetable.findMany({
+    const entries = await this.prisma.adminTimetable.findMany({
       where: { degreeId },
       orderBy: { day: 'asc' },
     });
+
+    return entries.map((entry) => ({
+      ...entry,
+      section: this.extractSectionFromNotes(entry.notes) ?? 'ALL',
+    }));
   }
 
   async getTimetableForUser(userId: string) {
@@ -71,10 +143,23 @@ export class TimetableService {
       throw new NotFoundException('User or degree not found');
     }
 
-    return this.prisma.adminTimetable.findMany({
+    const entries = await this.prisma.adminTimetable.findMany({
       where: { degreeId: user.degreeId },
       orderBy: { day: 'asc' },
     });
+
+    const userSection = user.department?.trim().toUpperCase();
+
+    const withSection = entries.map((entry) => ({
+      ...entry,
+      section: this.extractSectionFromNotes(entry.notes) ?? 'ALL',
+    }));
+
+    if (!userSection) {
+      return withSection;
+    }
+
+    return withSection.filter((entry) => entry.section === 'ALL' || entry.section === userSection);
   }
 
   async getCalendarHeadingsForMonth(userId: string, month: number, year: number) {

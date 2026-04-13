@@ -18,6 +18,7 @@ export interface UserProfile {
   enrollmentNumber?: string;
   course?: string;
   department?: string;
+  section?: string;
   profilePicture?: string;
   lastLogin?: string;
 }

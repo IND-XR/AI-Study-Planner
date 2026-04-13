@@ -67,7 +67,7 @@ export const AppShell = ({ children }: AppShellProps): JSX.Element => {
   return (
     <ProtectedRoute requiredRole="STUDENT">
       <div className={isDark ? 'dark' : ''}>
-        <div className="min-h-screen bg-[#eef2f7] text-slate-900 dark:bg-neutral-950 dark:text-slate-100">
+        <div className="min-h-screen bg-[#f7f5f2] text-slate-900 dark:bg-neutral-950 dark:text-slate-100">
           <aside className="fixed inset-y-0 left-0 z-40 hidden w-[260px] flex-col border-r border-[#ebe3da] bg-gradient-to-b from-[#f8f5f1] to-[#f4f1ed] px-4 py-4 lg:flex">
             <div className="mb-4 border-b border-[#e7dfd6] pb-4">
               <p className="text-[26px] leading-none font-semibold text-slate-800">Study Planner</p>
@@ -155,17 +155,17 @@ export const AppShell = ({ children }: AppShellProps): JSX.Element => {
           </aside>
 
           <div className="flex min-h-screen flex-1 flex-col lg:pl-[260px]">
-            <header className="sticky top-0 z-30 border-b border-[#dbe1ea] bg-[#eef2f7]/95 px-4 py-3 backdrop-blur md:px-6">
+            <header className="sticky top-0 z-30 border-b border-[#e9e4de] bg-[#f7f5f2]/95 px-4 py-3 backdrop-blur md:px-6">
               <div className="flex items-center justify-between gap-3">
                 <input
-                  className="w-full rounded-xl border border-[#d4dae5] bg-[#f5f7fb] px-4 py-2.5 text-sm outline-none transition focus:border-primary-500"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary-500"
                   placeholder="Search tasks, subjects, exams..."
                 />
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setTheme(isDark ? 'light' : 'dark')}
-                    className="rounded-lg border border-[#d4dae5] bg-white p-2"
+                    className="rounded-lg border border-slate-200 bg-white p-2"
                     aria-label="toggle theme"
                   >
                     {isDark ? <Sun size={16} /> : <Moon size={16} />}
@@ -173,7 +173,7 @@ export const AppShell = ({ children }: AppShellProps): JSX.Element => {
 
                   <Link
                     href="/dashboard/notifications"
-                    className="relative rounded-lg border border-[#d4dae5] bg-white p-2"
+                    className="relative rounded-lg border border-slate-200 bg-white p-2"
                   >
                     <Bell size={16} />
                     {unread > 0 ? (

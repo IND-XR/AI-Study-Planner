@@ -27,6 +27,16 @@ export class TimetableController {
     return this.timetableService.createTimetable(dto);
   }
 
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: CreateTimetableDto) {
+    return this.timetableService.updateTimetable(id, dto);
+  }
+
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.timetableService.deleteTimetable(id);
+  }
+
   @Get('degree')
   getTimetableByDegree(@Query('degreeId') degreeId: string) {
     return this.timetableService.getTimetableByDegree(degreeId);

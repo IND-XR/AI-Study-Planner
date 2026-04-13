@@ -186,6 +186,36 @@ export const apiClient = {
   deleteCalendarHeading: (id: string) =>
     client.delete(`/api/timetable/headings/${id}`),
 
+  // Timetable
+  getUserTimetable: () => client.get('/api/timetable/user'),
+  getTimetableByDegree: (degreeId: string) =>
+    client.get('/api/timetable/degree', { params: { degreeId } }),
+  createTimetableEntry: (data: {
+    degreeId: string;
+    day: string;
+    subject: string;
+    startTime: string;
+    endTime: string;
+    room: string;
+    type: string;
+    section?: string;
+  }) => client.post('/api/timetable', data),
+  updateTimetableEntry: (
+    id: string,
+    data: {
+      degreeId: string;
+      day: string;
+      subject: string;
+      startTime: string;
+      endTime: string;
+      room: string;
+      type: string;
+      section?: string;
+    },
+  ) => client.patch(`/api/timetable/${id}`, data),
+  deleteTimetableEntry: (id: string) => client.delete(`/api/timetable/${id}`),
+  getDegrees: () => client.get('/api/degrees'),
+
   // ✅ TOKEN HELPERS
   setToken: (token: string, refreshToken?: string) => {
     localStorage.setItem(TOKEN_KEY, token);

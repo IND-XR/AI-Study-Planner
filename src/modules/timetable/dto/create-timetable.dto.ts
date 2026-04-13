@@ -1,4 +1,4 @@
-import { IsString, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateTimetableDto {
   @IsUUID()
@@ -21,4 +21,8 @@ export class CreateTimetableDto {
 
   @IsString()
   type: string; // Lecture, Practical, Tutorial
+
+  @IsOptional()
+  @IsString()
+  section?: string; // e.g., A, B, C, ALL
 }

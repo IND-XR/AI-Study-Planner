@@ -8,6 +8,7 @@ const navItems = [
   { label: 'Exams', href: '/admin/exams' },
   { label: 'Students', href: '/admin/students' },
   { label: 'Study Plans', href: '/admin/study-plans' },
+  { label: 'Timetable', href: '/admin/timetable' },
   { label: 'Analytics', href: '/admin/analytics' },
   { label: 'Subscriptions', href: '/admin/subscriptions' },
   { label: 'Settings', href: '/admin/settings' },

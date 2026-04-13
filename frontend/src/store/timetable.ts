@@ -9,7 +9,23 @@ import type {
   StudySession,
   ExamDate,
   Milestone,
+  BreakCategory,
 } from '@/types';
+
+interface AdminTimetableEntry {
+  id: string;
+  day: string;
+  time: string;
+  subject: string;
+  room?: string | null;
+  type: string;
+  section?: string;
+}
+
+interface SyncOptions {
+  week: number;
+  year: number;
+}
 
 interface TimetableState {
   // Weekly Schedules
@@ -55,7 +71,80 @@ interface TimetableState {
 
   // Premium Features
   setPremiumStatus: (isPremium: boolean) => void;
+
+  // Backend Timetable Sync
+  syncWeeklyScheduleFromAdmin: (entries: AdminTimetableEntry[], options: SyncOptions) => WeeklySchedule;
 }
+
+const DAY_MAP: Record<string, DayOfWeek> = {
+  MONDAY: 'MONDAY',
+  TUESDAY: 'TUESDAY',
+  WEDNESDAY: 'WEDNESDAY',
+  THURSDAY: 'THURSDAY',
+  FRIDAY: 'FRIDAY',
+  SATURDAY: 'SATURDAY',
+  SUNDAY: 'SUNDAY',
+};
+
+const DAYS: DayOfWeek[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+
+const toMinutes = (time: string): number => {
+  const [h, m] = time.split(':').map(Number);
+  return h * 60 + m;
+};
+
+const overlaps = (aStart: string, aEnd: string, bStart: string, bEnd: string): boolean => {
+  const aS = toMinutes(aStart);
+  const aE = toMinutes(aEnd);
+  const bS = toMinutes(bStart);
+  const bE = toMinutes(bEnd);
+  return aS < bE && bS < aE;
+};
+
+const parseTimeRange = (timeRange: string): { startTime: string; endTime: string } => {
+  const [startTime, endTime] = timeRange.split('-');
+  return {
+    startTime: startTime?.trim() || '09:00',
+    endTime: endTime?.trim() || '10:00',
+  };
+};
+
+const normalizeDay = (day: string): DayOfWeek | null => {
+  const normalized = day.trim().toUpperCase();
+  return DAY_MAP[normalized] || null;
+};
+
+const getBreakCategory = (type: string, subject: string): BreakCategory => {
+  const value = `${type} ${subject}`.toLowerCase();
+  if (value.includes('college break') || value.includes('college_break') || value.includes('lunch') || value.includes('short break')) {
+    return 'COLLEGE_BREAK';
+  }
+  if (value.includes('commute') || value.includes('commute_break') || value.includes('travel') || value.includes('home break')) {
+    return 'COMMUTE_BREAK';
+  }
+  if (value.includes('dinner') || value.includes('dinner_break')) {
+    return 'DINNER_BREAK';
+  }
+  return 'GENERAL_BREAK';
+};
+
+const isBreakEntry = (type: string, subject: string): boolean => {
+  const value = `${type} ${subject}`.toLowerCase();
+  return (
+    value.includes('break') ||
+    value.includes('lunch') ||
+    value.includes('commute') ||
+    value.includes('dinner') ||
+    value.includes('college_break') ||
+    value.includes('commute_break') ||
+    value.includes('dinner_break')
+  );
+};
+
+const isStudyEntry = (type: string): boolean => {
+  const value = type.toLowerCase();
+  return value.includes('study') || value.includes('self') || value.includes('home');
+};
 
 // Mock AI Timetable Generator
 const generateAISchedule = (
@@ -493,5 +582,144 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     set(() => ({
       isPremiumUser: isPremium,
     }));
+  },
+
+  syncWeeklyScheduleFromAdmin: (entries: AdminTimetableEntry[], options: SyncOptions) => {
+    const { customSubjects } = get();
+    const scheduleId = `week-${options.week}-${options.year}-admin`;
+    const days: WeeklySchedule['days'] = {
+      MONDAY: [],
+      TUESDAY: [],
+      WEDNESDAY: [],
+      THURSDAY: [],
+      FRIDAY: [],
+      SATURDAY: [],
+      SUNDAY: [],
+    };
+
+    entries.forEach((entry) => {
+      const day = normalizeDay(entry.day);
+      if (!day) {
+        return;
+      }
+
+      const { startTime, endTime } = parseTimeRange(entry.time);
+      const type = entry.type || 'Lecture';
+      const normalizedType = type.toUpperCase();
+      const status = isBreakEntry(type, entry.subject)
+        ? 'BREAK'
+        : isStudyEntry(type)
+          ? 'STUDY'
+          : 'LECTURE';
+      const groupCode = normalizedType.includes('PRACTICAL') || normalizedType.includes('TUTORIAL') ? '1' : 'ALL';
+      const sectionCode = (entry.section || 'ALL').toUpperCase();
+      const roomCode = entry.room || '-';
+
+      days[day].push({
+        id: entry.id,
+        startTime,
+        endTime,
+        status,
+        subject: entry.subject,
+        topic: undefined,
+        source: 'ADMIN',
+        slotType: entry.type,
+        courseCode: entry.subject,
+        roomCode,
+        sectionCode,
+        groupCode,
+        breakCategory: status === 'BREAK' ? getBreakCategory(type, entry.subject) : undefined,
+      });
+    });
+
+    DAYS.forEach((day, dayIndex) => {
+      const existing = days[day];
+
+      const addIfNoOverlap = (slot: TimeSlot): void => {
+        const hasOverlap = existing.some((item) =>
+          overlaps(item.startTime, item.endTime, slot.startTime, slot.endTime),
+        );
+        if (!hasOverlap) {
+          existing.push(slot);
+        }
+      };
+
+      addIfNoOverlap({
+        id: `${scheduleId}-${day}-commute`,
+        startTime: '17:00',
+        endTime: '18:00',
+        status: 'BREAK',
+        subject: 'Commute / Home Break',
+        breakCategory: 'COMMUTE_BREAK',
+        source: 'MANUAL',
+        slotType: 'COMMUTE_BREAK',
+      });
+
+      const firstSubject = customSubjects[dayIndex % Math.max(customSubjects.length, 1)];
+      const secondSubject = customSubjects[(dayIndex + 1) % Math.max(customSubjects.length, 1)];
+
+      if (firstSubject) {
+        addIfNoOverlap({
+          id: `${scheduleId}-${day}-study-a`,
+          startTime: '18:15',
+          endTime: '19:15',
+          status: 'STUDY',
+          subject: firstSubject.name,
+          topic: 'Home self-study block',
+          priority: firstSubject.priority,
+          source: 'CUSTOM_STUDY',
+          slotType: 'CUSTOM_HOME_STUDY',
+        });
+      }
+
+      if (secondSubject) {
+        addIfNoOverlap({
+          id: `${scheduleId}-${day}-study-b`,
+          startTime: '19:30',
+          endTime: '20:30',
+          status: 'STUDY',
+          subject: secondSubject.name,
+          topic: 'Home self-study block',
+          priority: secondSubject.priority,
+          source: 'CUSTOM_STUDY',
+          slotType: 'CUSTOM_HOME_STUDY',
+        });
+      }
+
+      addIfNoOverlap({
+        id: `${scheduleId}-${day}-dinner`,
+        startTime: '20:30',
+        endTime: '21:00',
+        status: 'BREAK',
+        subject: 'Dinner Break',
+        breakCategory: 'DINNER_BREAK',
+        source: 'MANUAL',
+        slotType: 'DINNER_BREAK',
+      });
+
+      days[day] = [...existing].sort((a, b) => toMinutes(a.startTime) - toMinutes(b.startTime));
+    });
+
+    const syncedSchedule: WeeklySchedule = {
+      id: scheduleId,
+      userId: 'user-1',
+      week: options.week,
+      year: options.year,
+      days,
+      isPremium: false,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    set((state) => ({
+      weeklySchedules: [
+        syncedSchedule,
+        ...state.weeklySchedules.filter((item) => item.id !== syncedSchedule.id),
+      ],
+      currentWeekSchedule: syncedSchedule,
+    }));
+
+    return syncedSchedule;
   },
 }));

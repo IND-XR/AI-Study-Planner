@@ -111,6 +111,7 @@ export interface AuthResponse {
 
 export type DayOfWeek = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
 export type TimeSlotStatus = 'LECTURE' | 'STUDY' | 'BREAK' | 'FREE';
+export type BreakCategory = 'COLLEGE_BREAK' | 'COMMUTE_BREAK' | 'DINNER_BREAK' | 'GENERAL_BREAK';
 
 export interface TimeSlot {
   id: string;
@@ -121,6 +122,13 @@ export interface TimeSlot {
   topic?: string;
   priority?: 'LOW' | 'MEDIUM' | 'HIGH';
   lecture?: Lecture;
+  breakCategory?: BreakCategory;
+  source?: 'ADMIN' | 'CUSTOM_STUDY' | 'AI' | 'MANUAL';
+  slotType?: string;
+  courseCode?: string;
+  roomCode?: string;
+  sectionCode?: string;
+  groupCode?: string;
 }
 
 export interface WeeklySchedule {
